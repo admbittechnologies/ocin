@@ -1,0 +1,1 @@
+| 23:30 | FIXED: Approval workflow broken logic removed | app/services/agent_runner.py | Removed duplicate/broken approval check sections that were causing conflicts. Replaced with proper approval detection logic. | ~200

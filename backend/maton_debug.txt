@@ -1,0 +1,3727 @@
+{
+  "name": "@maton/agent-toolkit",
+  "version": "0.0.10",
+  "homepage": "https://github.com/maton-ai/agent-toolkit",
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf langchain ai-sdk modelcontextprotocol openai",
+    "lint": "eslint \"./**/*.ts*\"",
+    "prettier": "prettier './**/*.{js,ts,md,html,css}' --write",
+    "prettier-check": "prettier './**/*.{js,ts,md,html,css}' --check"
+  },
+  "exports": {
+    "./langchain": {
+      "types": "./langchain/index.d.ts",
+      "require": "./langchain/index.js",
+      "import": "./langchain/index.mjs"
+    },
+    "./ai-sdk": {
+      "types": "./ai-sdk/index.d.ts",
+      "require": "./ai-sdk/index.js",
+      "import": "./ai-sdk/index.mjs"
+    },
+    "./openai": {
+      "types": "./openai/index.d.ts",
+      "require": "./openai/index.js",
+      "import": "./openai/index.mjs"
+    },
+    "./modelcontextprotocol": {
+      "types": "./modelcontextprotocol/index.d.ts",
+      "require": "./modelcontextprotocol/index.js",
+      "import": "./modelcontextprotocol/index.mjs"
+    }
+  },
+  "packageManager": "pnpm@9.11.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Maton <support@maton.ai> (https://maton.ai/)",
+  "contributors": [
+    "Richard Song <support@maton.ai>",
+    "Byungkyu Park <support@maton.ai>"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/compat": "^1.2.4",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.5",
+    "@typescript-eslint/eslint-plugin": "^8.19.1",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jest": "^28.10.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "globals": "^15.14.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.4.2",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.3"
+  },
+  "peerDependencies": {
+    "openai": "^4.86.1",
+    "@langchain/core": "^0.3.6",
+    "@modelcontextprotocol/sdk": "^1.4.1",
+    "ai": "^3.4.7 || ^4.0.0"
+  },
+  "workspaces": [
+    ".",
+    "examples/*"
+  ],
+  "files": [
+    "ai-sdk/**/*",
+    "langchain/**/*",
+    "modelcontextprotocol/**/*",
+    "openai/**/*",
+    "LICENSE",
+    "README.md",
+    "VERSION",
+    "package.json"
+  ]
+}
+"use strict";
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/modelcontextprotocol/index.ts
+var index_exports = {};
+__export(index_exports, {
+  MatonAgentToolkit: () => toolkit_default
+});
+module.exports = __toCommonJS(index_exports);
+
+// src/modelcontextprotocol/toolkit.ts
+var import_mcp = require("@modelcontextprotocol/sdk/server/mcp.js");
+
+// src/shared/configuration.ts
+var ACCEPTED_APPS = [
+  "airtable",
+  "asana",
+  "aws",
+  "calendly",
+  "clickup",
+  "google-calendar",
+  "google-docs",
+  "google-drive",
+  "google-mail",
+  "google-sheet",
+  "hubspot",
+  "jira",
+  "jotform",
+  "klaviyo",
+  "mailchimp",
+  "notion",
+  "outlook",
+  "pipedrive",
+  "salesforce",
+  "shopify",
+  "slack",
+  "stripe",
+  "typeform",
+  "youtube"
+];
+var ACCEPTED_ACTIONS = {
+  airtable: ["list-bases", "list-records", "list-tables"],
+  asana: [
+    "create-task",
+    "get-task",
+    "list-projects",
+    "list-tasks",
+    "list-workspaces"
+  ],
+  aws: ["get-s3-object", "list-s3-buckets", "list-s3-objects"],
+  calendly: [
+    "get-event",
+    "list-event-invitees",
+    "list-event-types",
+    "list-events"
+  ],
+  clickup: [
+    "create-task",
+    "delete-task",
+    "get-task",
+    "list-folders",
+    "list-lists",
+    "list-spaces",
+    "list-tasks",
+    "list-workspaces"
+  ],
+  "google-calendar": [
+    "create-event",
+    "delete-event",
+    "get-calendar",
+    "get-event",
+    "list-calendars",
+    "list-events",
+    "update-event"
+  ],
+  "google-docs": [
+    "append-text",
+    "create-document",
+    "find-document",
+    "get-document"
+  ],
+  "google-drive": [
+    "create-file",
+    "create-folder",
+    "delete-file",
+    "find-file",
+    "find-folder",
+    "get-file",
+    "list-files"
+  ],
+  "google-mail": [
+    "add-label-to-email",
+    "create-draft",
+    "find-email",
+    "list-labels",
+    "send-email",
+    "remove-label-from-email"
+  ],
+  "google-sheet": [
+    "add-column",
+    "add-multiple-rows",
+    "clear-cell",
+    "clear-rows",
+    "create-spreadsheet",
+    "create-worksheet",
+    "delete-rows",
+    "delete-worksheet",
+    "find-row",
+    "get-cell",
+    "get-spreadsheet",
+    "get-values-in-range",
+    "list-worksheets",
+    "update-cell",
+    "update-multiple-rows",
+    "update-row"
+  ],
+  hubspot: [
+    "create-contact",
+    "get-contact",
+    "list-contacts",
+    "search-contacts",
+    "merge-contacts",
+    "update-contact",
+    "delete-contact",
+    "create-deal",
+    "get-deal",
+    "list-deals",
+    "search-deals",
+    "merge-deals",
+    "update-deal",
+    "delete-deal"
+  ],
+  jira: [
+    "list-clouds",
+    "get-issue",
+    "list-issues",
+    "add-comment-to-issue",
+    "list-comments",
+    "update-comment",
+    "list-projects",
+    "get-user",
+    "list-users"
+  ],
+  jotform: ["list-forms", "list-submissions"],
+  klaviyo: [
+    "add-profiles-to-list",
+    "assign-template-to-campaign-message",
+    "create-campaign",
+    "create-list",
+    "create-profile",
+    "create-template",
+    "get-campaign-messages",
+    "get-campaign-send-job",
+    "get-campaigns",
+    "get-lists",
+    "get-profiles-for-list",
+    "get-profiles",
+    "get-templates",
+    "send-campaign"
+  ],
+  mailchimp: ["get-campaign", "search-campaign"],
+  notion: ["create-page", "find-page", "get-page"],
+  outlook: ["create-draft", "find-email", "send-email"],
+  pipedrive: ["search-people"],
+  salesforce: ["create-contact", "get-contact", "list-contacts"],
+  shopify: ["create-order", "get-order", "list-orders"],
+  slack: ["list-channels", "list-messages", "list-replies", "send-message"],
+  stripe: [
+    "create-customer",
+    "create-invoice-item",
+    "create-invoice",
+    "delete-customer",
+    "get-customer",
+    "get-invoice",
+    "list-customers",
+    "list-invoices"
+  ],
+  typeform: ["get-form", "list-forms", "list-responses"],
+  youtube: ["list-videos", "search-videos"]
+};
+var AGENT_ACTIONS = ["transfer-agent"];
+var BUILTIN_ACTIONS = ["check-connection", "start-connection"];
+function getMethod(app, action) {
+  return `${app}_${action.replaceAll("-", "_")}`;
+}
+var checkConfiguration = (configuration) => {
+  if (!configuration.app) {
+    throw new Error("The app argument must be provided.");
+  }
+  if (configuration.agent && configuration.actions) {
+    throw new Error("Both --agent and --actions arguments cannot be provided.");
+  } else if (!configuration.agent && !configuration.actions) {
+    throw new Error("Either --agent or --actions arguments must be provided.");
+  }
+  if (!ACCEPTED_APPS.includes(configuration.app)) {
+    throw new Error(
+      `Invalid app: ${configuration.app}. Accepted apps are: ${ACCEPTED_APPS.join(
+        ", "
+      )}`
+    );
+  }
+  if (configuration.actions) {
+    configuration.actions.forEach((action) => {
+      if (action == "all") {
+        return;
+      }
+      if (!ACCEPTED_ACTIONS[configuration.app].includes(action.trim())) {
+        throw new Error(
+          `Invalid action: ${action}. Accepted actions are: ${ACCEPTED_ACTIONS[configuration.app].join(", ")}`
+        );
+      }
+    });
+  }
+};
+var isToolAllowed = (tool, configuration) => {
+  if (!configuration.app || !tool.method.startsWith(configuration.app)) {
+    return false;
+  }
+  if (BUILTIN_ACTIONS.map(
+    (action) => getMethod(configuration.app, action)
+  ).includes(tool.method)) {
+    return true;
+  }
+  if (configuration.agent) {
+    return AGENT_ACTIONS.map(
+      (action) => getMethod(configuration.app, action)
+    ).includes(tool.method);
+  } else if (configuration.actions) {
+    if (configuration.actions.includes("all")) {
+      return !AGENT_ACTIONS.map(
+        (action) => getMethod(configuration.app, action)
+      ).includes(tool.method);
+    }
+    return configuration.actions.map((action) => getMethod(configuration.app, action)).includes(tool.method);
+  } else {
+    return false;
+  }
+};
+
+// src/shared/api.ts
+var MatonClient = class {
+  headers;
+  constructor(apiKey) {
+    this.headers = { "x-api-key": apiKey };
+  }
+  async createConnection(app) {
+    const body = { app };
+    const response = await fetch("https://api.maton.ai/create-connection", {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body)
+    });
+    return response.json();
+  }
+  async getConnection(connectionId) {
+    const body = { connection_id: connectionId };
+    const response = await fetch("https://api.maton.ai/get-connection", {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body)
+    });
+    return response.json();
+  }
+  async listConnections(app, status) {
+    const body = { app, status };
+    const response = await fetch("https://api.maton.ai/list-connections", {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body)
+    });
+    return response.json();
+  }
+  async deleteConnection(connectionId) {
+    const body = { connection_id: connectionId };
+    const response = await fetch("https://api.maton.ai/delete-connection", {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body)
+    });
+    return response.json();
+  }
+  async invokeAction(app, action, args) {
+    const body = {
+      app,
+      action,
+      args
+    };
+    const response = await fetch("https://api.maton.ai/invoke-action", {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body)
+    });
+    return response.json();
+  }
+  async invokeAgent(app, userPrompt) {
+    const body = {
+      app,
+      user_prompt: userPrompt
+    };
+    const response = await fetch("https://api.maton.ai/invoke-agent", {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body)
+    });
+    return response.json();
+  }
+};
+var MatonAPI = class {
+  maton;
+  constructor(apiKey) {
+    const envApiKey = process.env.MATON_API_KEY ?? "";
+    if (!apiKey && !envApiKey) {
+      throw new Error(
+        "Did not find MATON_API_KEY, please add an environment variable or pass it as a parameter"
+      );
+    }
+    this.maton = new MatonClient(apiKey || envApiKey);
+  }
+  async run(method, arg) {
+    const [app, ...rest] = method.split("_");
+    const action = rest.join("-");
+    let output = {};
+    if (method.endsWith("check_connection")) {
+      const listConnectionsResp = await this.maton.listConnections(
+        app,
+        "ACTIVE"
+      );
+      const connections = listConnectionsResp.connections;
+      return connections && connections.length > 0;
+    } else if (method.endsWith("start_connection")) {
+      const createConnectionResp = await this.maton.createConnection(app);
+      const getConnectionResp = await this.maton.getConnection(
+        createConnectionResp.connection_id
+      );
+      const connection = getConnectionResp.connection;
+      if (connection) {
+        output = {
+          connection_id: connection.connection_id,
+          redirect_url: connection.url,
+          instruction: "Ask user to open the redirect URL and complete the Oauth process. \n                    Once user completes the process and gets back, check again by calling check_connection"
+        };
+      }
+    } else if (method.endsWith("transfer_agent")) {
+      output = await this.maton.invokeAgent(app, arg.user_prompt);
+    } else {
+      output = await this.maton.invokeAction(app, action, arg);
+    }
+    return JSON.stringify(output);
+  }
+};
+var api_default = MatonAPI;
+
+// src/shared/prompts/airtable.ts
+var checkConnectionPrompt = `
+Check if there is any active connection to the Airtable app.
+`;
+var startConnectionPrompt = `
+Start a connection to the Airtable app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt = `
+Transfer to the Airtable agent.
+`;
+var listBasesPrompt = `
+This tool will list bases in Airtable.
+`;
+var listRecordsPrompt = `
+This tool will list records in a table in Airtable.
+`;
+var listTablesPrompt = `
+This tool will list tables in Airtable.
+`;
+
+// src/shared/prompts/asana.ts
+var checkConnectionPrompt2 = `
+Check if there is any active connection to the Asana app.
+`;
+var startConnectionPrompt2 = `
+Start a connection to the Asana app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt2 = `
+Transfer to the Asana agent.
+`;
+var createTaskPrompt = `
+This tool will create a task in Asana.
+`;
+var getTaskPrompt = `
+This tool will get a task in Asana.
+`;
+var listProjectsPrompt = `
+This tool will list projects in Asana.
+`;
+var listTasksPrompt = `
+This tool will list tasks in Asana.
+`;
+var listWorkspacesPrompt = `
+This tool will list workspaces in Asana.
+`;
+
+// src/shared/prompts/aws.ts
+var checkConnectionPrompt3 = `
+Check if there is any active connection to the AWS app.
+`;
+var startConnectionPrompt3 = `
+Start a connection to the AWS app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt3 = `
+Transfer to the AWS agent.
+`;
+var getS3ObjectPrompt = `
+This tool will get an S3 object through a presigned URL.
+`;
+var listS3BucketsPrompt = `
+This tool will list all S3 buckets in the account.
+`;
+var listS3ObjectsPrompt = `
+This tool will list all S3 objects in a bucket.
+`;
+
+// src/shared/prompts/calendly.ts
+var checkConnectionPrompt4 = `
+Check if there is any active connection to the Calendly app.
+`;
+var startConnectionPrompt4 = `
+Start a connection to the Calendly app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt4 = `
+Transfer to the Calendly agent.
+`;
+var getEventPrompt = `
+This tool will get an event in Calendly.
+`;
+var listEventInviteesPrompt = `
+This tool will list event invitees in Calendly.
+`;
+var listEventTypesPrompt = `
+This tool will list event types in Calendly.
+`;
+var listEventsPrompt = `
+This tool will list events in Calendly.
+`;
+
+// src/shared/prompts/clickup.ts
+var checkConnectionPrompt5 = `
+Check if there is any active connection to the ClickUp app.
+`;
+var startConnectionPrompt5 = `
+Start a connection to the ClickUp app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt5 = `
+Transfer to the ClickUp agent.
+`;
+var createTaskPrompt2 = `
+This tool will create a task in ClickUp.
+`;
+var deleteTaskPrompt = `
+This tool will delete a task in ClickUp.
+`;
+var getTaskPrompt2 = `
+This tool will get a task in ClickUp.
+`;
+var listFoldersPrompt = `
+This tool will list folders in ClickUp.
+`;
+var listListsPrompt = `
+This tool will list lists in ClickUp.
+`;
+var listSpacesPrompt = `
+This tool will list spaces in ClickUp.
+`;
+var listTasksPrompt2 = `
+This tool will list tasks in ClickUp.
+`;
+var listWorkspacesPrompt2 = `
+This tool will list workspaces in ClickUp.
+`;
+
+// src/shared/prompts/google-calendar.ts
+var checkConnectionPrompt6 = `
+Check if there is any active connection to the Google Calendar app.
+`;
+var startConnectionPrompt6 = `
+Start a connection to the Google Calendar app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt6 = `
+Transfer to the Google Calendar agent.
+`;
+var createEventPrompt = `
+This tool will create an event in a calendar in Google Calendar.
+`;
+var deleteEventPrompt = `
+This tool will delete an event in a calendar in Google Calendar.
+`;
+var getCalendarPrompt = `
+This tool will get a calendar in Google Calendar.
+`;
+var getEventPrompt2 = `
+This tool will get an event in a calendar in Google Calendar.
+`;
+var listCalendarsPrompt = `
+This tool will list calendars in Google Calendar.
+`;
+var listEventsPrompt2 = `
+This tool will list events in a calendar in Google Calendar.
+`;
+var updateEventPrompt = `
+This tool will update an event in a calendar in Google Calendar.
+`;
+
+// src/shared/prompts/google-docs.ts
+var checkConnectionPrompt7 = `
+Check if there is any active connection to the Google Docs app.
+`;
+var startConnectionPrompt7 = `
+Start a connection to the Google Docs app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt7 = `
+Transfer to the Google Docs agent.
+`;
+var appendTextPrompt = `
+This tool will append text to a Google document.
+`;
+var createDocumentPrompt = `
+This tool will create a Google document.
+`;
+var findDocumentPrompt = `
+This tool will find a Google document.
+`;
+var getDocumentPrompt = `
+This tool will get a Google document.
+`;
+
+// src/shared/prompts/google-drive.ts
+var checkConnectionPrompt8 = `
+Check if there is any active connection to the Google Drive app.
+`;
+var startConnectionPrompt8 = `
+Start a connection to the Google Drive app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt8 = `
+Transfer to the Google Drive agent.
+`;
+var createFilePrompt = `
+This tool will create a file in Google Drive.
+`;
+var createFolderPrompt = `
+This tool will create a folder in Google Drive.
+`;
+var deleteFilePrompt = `
+This tool will delete a file from Google Drive.
+`;
+var findFilePrompt = `
+This tool will find a file in Google Drive.
+`;
+var findFolderPrompt = `
+This tool will find a folder in Google Drive.
+`;
+var getFilePrompt = `
+This tool will get a file from Google Drive.
+`;
+var listFilesPrompt = `
+This tool will list files in Google Drive.
+`;
+
+// src/shared/prompts/google-mail.ts
+var checkConnectionPrompt9 = `
+Check if there is any active connection to the Gmail app.
+`;
+var startConnectionPrompt9 = `
+Start a connection to the Gmail app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt9 = `
+Transfer to the Gmail agent.
+`;
+var addLabelToEmailPrompt = `
+This tool will add label to an email in Gmail.
+`;
+var createDraftPrompt = `
+This tool will create draft in Gmail.
+`;
+var findEmailPrompt = `
+This tool will find email in Gmail.
+`;
+var listLabelsPrompt = `
+This tool will list labels in Gmail.
+`;
+var sendEmailPrompt = `
+This tool will send email in Gmail.
+`;
+var removeLabelFromEmailPrompt = `
+This tool will remove label from an email in Gmail.
+`;
+
+// src/shared/prompts/google-sheet.ts
+var checkConnectionPrompt10 = `
+Check if there is any active connection to the Google Sheets app.
+`;
+var startConnectionPrompt10 = `
+Start a connection to the Google Sheets app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt10 = `
+Transfer to the Google Sheets agent.
+`;
+var addColumnPrompt = `
+This tool will add a column to a Google spreadsheet.
+`;
+var addMultipleRowsPrompt = `
+This tool will add multiple rows to a Google spreadsheet.
+`;
+var clearCellPrompt = `
+This tool will clear a cell in a Google spreadsheet.
+`;
+var clearRowsPrompt = `
+This tool will clear multiple rows in a Google spreadsheet.
+`;
+var createSpreadsheetPrompt = `
+This tool will create a Google spreadsheet.
+`;
+var createWorksheetPrompt = `
+This tool will create a worksheet in a Google spreadsheet.
+`;
+var deleteRowsPrompt = `
+This tool will delete multiple rows in a Google spreadsheet.
+`;
+var deleteWorksheetPrompt = `
+This tool will delete a worksheet in a Google spreadsheet.
+`;
+var findRowPrompt = `
+This tool will find one or more rows by a column and value.
+`;
+var getCellPrompt = `
+This tool will get a cell from a Google spreadsheet.
+`;
+var getSpreadsheetPrompt = `
+This tool will get a Google spreadsheet.
+`;
+var getValuesInRangePrompt = `
+This tool will get values in a range in a Google spreadsheet.
+`;
+var listWorksheetsPrompt = `
+This tool will list worksheets in a Google spreadsheet.
+`;
+var updateCellPrompt = `
+This tool will update a cell in a Google spreadsheet.
+`;
+var updateMultipleRowsPrompt = `
+This tool will update multiple rows in a Google spreadsheet.
+`;
+var updateRowPrompt = `
+This tool will update a row in a Google spreadsheet.
+`;
+
+// src/shared/prompts/hubspot.ts
+var checkConnectionPrompt11 = `
+Check if there is any active connection to the salesforce app.
+`;
+var startConnectionPrompt11 = `
+Start a connection to the salesforce app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt11 = `
+Transfer to the HubSpot agent.
+`;
+var createContactPrompt = `
+Create a contact. Object properties should include at least one of the following properties: email, firstname, or lastname. It is recommended to always include email, because email address is the primary unique identifier to avoid duplicate contacts in HubSpot.
+`;
+var getContactPrompt = `
+Get a contact.
+`;
+var listContactsPrompt = `
+List all contacts, using query parameters to control the information that gets returned.
+`;
+var searchContactsPrompt = `
+Search for contacts by filtering on properties, searching through associations, and sorting results. To apply OR logic for filters, include multiple filters within a filter group. To apply AND logic for filters, include a list of conditions within one set of filters.
+`;
+var mergeContactsPrompt = `
+Merge two contacts.
+`;
+var updateContactPrompt = `
+Update a contact. Provided property values will be overwritten. Properties values can be cleared by passing an empty string.
+`;
+var deleteContactPrompt = `
+Delete a contact.
+`;
+var createDealPrompt = `
+Create a deal. Object properties should include the following properties: dealname, dealstage, and if you have multiple pipelines, pipeline. If a pipeline isn't specified, the default pipeline will be used.
+`;
+var getDealPrompt = `
+Get a deal.
+`;
+var listDealsPrompt = `
+List all deals, using query parameters to control the information that gets returned.
+`;
+var searchDealsPrompt = `
+Search for deals by filtering on properties, searching through associations, and sorting results. To apply OR logic for filters, include multiple filters within a filter group. To apply AND logic for filters, include a list of conditions within one set of filters.
+`;
+var mergeDealPrompt = `
+Merge two deals.
+`;
+var updateDealPrompt = `
+Update a deal. Provided property values will be overwritten. Properties values can be cleared by passing an empty string.
+`;
+var deleteDealPrompt = `
+Delete a deal.
+`;
+
+// src/shared/prompts/jira.ts
+var checkConnectionPrompt12 = `
+Check if there is any active connection to the Jira app.
+`;
+var startConnectionPrompt12 = `
+Start a connection to the Jira app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt12 = `
+Transfer to the Jira agent.
+`;
+var listCloudsPrompt = `
+This tool will list all clouds in Jira.
+`;
+var getIssuePrompt = `
+This tool will get an issue from Jira.
+`;
+var listIssuesPrompt = `
+This tool will list issues in Jira.
+`;
+var addCommentToIssuePrompt = `
+This tool will add a comment to an issue in Jira.
+`;
+var listCommentsPrompt = `
+This tool will list all comments in an issue in Jira.
+`;
+var updateCommentPrompt = `
+This tool will update a comment in an issue in Jira.
+`;
+var listProjectsPrompt2 = `
+This tool will list all projects in Jira.
+`;
+var getUserPrompt = `
+This tool will get a user from Jira.
+`;
+var listUsersPrompt = `
+This tool will list all users in Jira.
+`;
+
+// src/shared/prompts/jotform.ts
+var checkConnectionPrompt13 = `
+Check if there is any active connection to the Jotform app.
+`;
+var startConnectionPrompt13 = `
+Start a connection to the Jotform app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt13 = `
+Transfer to the Jotform agent.
+`;
+var listFormsPrompt = `
+List forms in Jotform.
+`;
+var listSubmissionsPrompt = `
+List form submissions in Jotform.
+`;
+
+// src/shared/prompts/klaviyo.ts
+var checkConnectionPrompt14 = `
+Check if there is any active connection to the klaviyo app.
+`;
+var startConnectionPrompt14 = `
+Start a connection to the klaviyo app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt14 = `
+Transfer to the klaviyo agent.
+`;
+var addProfilesToListPrompt = `
+Add profiles to a list.
+`;
+var assignTemplateToCampaignMessagePrompt = `
+Assign a template to a campaign message.
+`;
+var createCampaignPrompt = `
+Create a campaign.
+`;
+var createListPrompt = `
+Create a list.
+`;
+var createProfilePrompt = `
+Create a profile.
+`;
+var createTemplatePrompt = `
+Create a template.
+`;
+var getCampaignMessagesPrompt = `
+Get messages for campaign.
+`;
+var getCampaignSendJobPrompt = `
+Get send job for campaign.
+`;
+var getCampaignsPrompt = `
+Get campaigns.
+`;
+var getListsPrompt = `
+Get lists.
+`;
+var getProfilesForListPrompt = `
+Get profiles for list.
+`;
+var getProfilesPrompt = `
+Get profiles.
+`;
+var getTemplatesPrompt = `
+Get templates.
+`;
+var sendCampaignPrompt = `
+Send campaign.
+`;
+
+// src/shared/prompts/mailchimp.ts
+var checkConnectionPrompt15 = `
+Check if there is any active connection to the Mailchimp app.
+`;
+var startConnectionPrompt15 = `
+Start a connection to the Mailchimp app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt15 = `
+Transfer to the Mailchimp agent.
+`;
+var getCampaignPrompt = `
+Get campaign in Mailchimp.
+`;
+var searchCampaignPrompt = `
+Search campaign in Mailchimp.
+`;
+
+// src/shared/prompts/notion.ts
+var checkConnectionPrompt16 = `
+Check if there is any active connection to the Notion app.
+`;
+var startConnectionPrompt16 = `
+Start a connection to the Notion app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt16 = `
+Transfer to the Notion agent.
+`;
+var createPagePrompt = `
+Create a page in Notion.
+`;
+var findPagePrompt = `
+Find page in Notion.
+`;
+var getPagePrompt = `
+Get a page in Notion.
+`;
+
+// src/shared/prompts/outlook.ts
+var checkConnectionPrompt17 = `
+Check if there is any active connection to the Outlook app.
+`;
+var startConnectionPrompt17 = `
+Start a connection to the Outlook app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt17 = `
+Transfer to the Outlook agent.
+`;
+var createDraftPrompt2 = `
+Create draft in Outlook.
+`;
+var findEmailPrompt2 = `
+Find email in Outlook.
+`;
+var sendEmailPrompt2 = `
+Send email in Outlook.
+`;
+
+// src/shared/prompts/pipedrive.ts
+var checkConnectionPrompt18 = `
+Check if there is any active connection to the Outlook app.
+`;
+var startConnectionPrompt18 = `
+Start a connection to the Outlook app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt18 = `
+Transfer to the Outlook agent.
+`;
+var searchPeoplePrompt = `
+Search people in Pipedrive.
+`;
+
+// src/shared/prompts/salesforce.ts
+var checkConnectionPrompt19 = `
+Check if there is any active connection to the salesforce app.
+`;
+var startConnectionPrompt19 = `
+Start a connection to the salesforce app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt19 = `
+Transfer to the Salesforce agent.
+`;
+var createContactPrompt2 = `
+This tool will create a contact in Salesforce.
+`;
+var getContactPrompt2 = `
+This tool will get a contact from Salesforce.
+`;
+var listContactsPrompt2 = `
+This tool will list all contacts in Salesforce.
+`;
+
+// src/shared/prompts/shopify.ts
+var checkConnectionPrompt20 = `
+Check if there is any active connection to the Shopify app.
+`;
+var startConnectionPrompt20 = `
+Start a connection to the Shopify app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt20 = `
+Transfer to the Shopify agent.
+`;
+var createOrderPrompt = `
+Create order in Shopify.
+`;
+var getOrderPrompt = `
+Get order in Shopify.
+`;
+var listOrdersPrompt = `
+List orders in Shopify.
+`;
+
+// src/shared/prompts/slack.ts
+var checkConnectionPrompt21 = `
+Check if there is any active connection to the Slack app.
+`;
+var startConnectionPrompt21 = `
+Start a connection to the Slack app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt21 = `
+Transfer to the Slack agent.
+`;
+var listChannelsPrompt = `
+List channels for the workspace in Slack.
+`;
+var listMessagesPrompt = `
+List messages in a channel in Slack.
+`;
+var listRepliesPrompt = `
+List replies in a channel in Slack.
+`;
+var sendMessagePrompt = `
+Send message to a channel in Slack.
+`;
+
+// src/shared/prompts/stripe.ts
+var checkConnectionPrompt22 = `
+Check if there is any active connection to the Stripe app.
+`;
+var startConnectionPrompt22 = `
+Start a connection to the Stripe app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt22 = `
+Transfer to the Stripe agent.
+`;
+var createCustomerPrompt = `
+Create a customer in Stripe.
+`;
+var createInvoiceItemPrompt = `
+Create an invoice item on an invoice in Stripe.
+`;
+var createInvoicePrompt = `
+Create an invoice on a customer in Stripe.
+`;
+var deleteCustomerPrompt = `
+Delete customer in Stripe.
+`;
+var getCustomerPrompt = `
+Get customer in Stripe.
+`;
+var getInvoicePrompt = `
+Get an invoice in Stripe.
+`;
+var listCustomersPrompt = `
+List customers in Stripe.
+`;
+var listInvoicesPrompt = `
+List invoices in Stripe.
+`;
+
+// src/shared/prompts/typeform.ts
+var checkConnectionPrompt23 = `
+Check if there is any active connection to the Typeform app.
+`;
+var startConnectionPrompt23 = `
+Start a connection to the Typeform app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt23 = `
+Transfer to the Typeform agent.
+`;
+var getFormPrompt = `
+Get form in Typeform.
+`;
+var listFormsPrompt2 = `
+List forms in Typeform.
+`;
+var listResponsesPrompt = `
+List responses in a form in Typeform.
+`;
+
+// src/shared/prompts/youtube.ts
+var checkConnectionPrompt24 = `
+Check if there is any active connection to the YouTube app.
+`;
+var startConnectionPrompt24 = `
+Start a connection to the YouTube app. Active connections are required to perform actions with the app.
+`;
+var transferAgentPrompt24 = `
+Transfer to the YouTube agent.
+`;
+var listVideosPrompt = `
+List videos in YouTube.
+`;
+var searchVideosPrompt = `
+Search videos in YouTube.
+`;
+
+// src/shared/parameters/airtable.ts
+var import_zod = require("zod");
+var checkConnectionParameters = import_zod.z.object({});
+var startConnectionParameters = import_zod.z.object({});
+var transferAgentParameters = import_zod.z.object({
+  user_prompt: import_zod.z.string().describe("The user prompt")
+});
+var listBasesParameters = import_zod.z.object({});
+var listRecordsParameters = import_zod.z.object({
+  base_id: import_zod.z.string().describe("The base ID of the Airtable app"),
+  table_id: import_zod.z.string().describe("The ID of the table")
+});
+var listTablesParameters = import_zod.z.object({
+  base_id: import_zod.z.string().describe("The base ID of the Airtable app")
+});
+
+// src/shared/parameters/asana.ts
+var import_zod2 = require("zod");
+var checkConnectionParameters2 = import_zod2.z.object({});
+var startConnectionParameters2 = import_zod2.z.object({});
+var transferAgentParameters2 = import_zod2.z.object({
+  user_prompt: import_zod2.z.string().describe("The user prompt")
+});
+var createTaskParameters = import_zod2.z.object({
+  project_id: import_zod2.z.string().describe("The project ID"),
+  name: import_zod2.z.string().describe("Name of the task"),
+  assignee: import_zod2.z.string().describe("The email of the user").optional(),
+  completed: import_zod2.z.boolean().describe("True if the task is currently marked complete, false if not").optional(),
+  due_at: import_zod2.z.string().describe(
+    "The UTC date and time on which this task is due, or null if the task has no due time. This takes an ISO 8601 date string in UTC and should not be used together with due_on."
+  ).optional(),
+  notes: import_zod2.z.string().describe("Free-form textual information associated with the task")
+});
+var getTaskParameters = import_zod2.z.object({
+  task_id: import_zod2.z.string().describe("The task ID")
+});
+var listProjectsParameters = import_zod2.z.object({
+  workspace_id: import_zod2.z.string().describe("The workspace ID")
+});
+var listTasksParameters = import_zod2.z.object({
+  project_id: import_zod2.z.string().describe("The project ID")
+});
+var listWorkspacesParameters = import_zod2.z.object({});
+
+// src/shared/parameters/aws.ts
+var import_zod3 = require("zod");
+var checkConnectionParameters3 = import_zod3.z.object({});
+var startConnectionParameters3 = import_zod3.z.object({});
+var transferAgentParameters3 = import_zod3.z.object({
+  user_prompt: import_zod3.z.string().describe("The user prompt")
+});
+var getS3ObjectParameters = import_zod3.z.object({
+  bucket_name: import_zod3.z.string().describe("The name of the S3 bucket"),
+  object_key: import_zod3.z.string().describe("The key of the S3 object")
+});
+var listS3BucketsParameters = import_zod3.z.object({});
+var listS3ObjectsParameters = import_zod3.z.object({
+  bucket_name: import_zod3.z.string().describe("The name of the S3 bucket")
+});
+
+// src/shared/parameters/calendly.ts
+var import_zod4 = require("zod");
+var checkConnectionParameters4 = import_zod4.z.object({});
+var startConnectionParameters4 = import_zod4.z.object({});
+var transferAgentParameters4 = import_zod4.z.object({
+  user_prompt: import_zod4.z.string().describe("The user prompt")
+});
+var getEventParameters = import_zod4.z.object({
+  event_id: import_zod4.z.string().describe("The ID of the event")
+});
+var listEventInviteesParameters = import_zod4.z.object({
+  event_id: import_zod4.z.string().describe("The ID of the event")
+});
+var listEventTypesParameters = import_zod4.z.object({});
+var listEventsParameters = import_zod4.z.object({
+  invitee: import_zod4.z.string().describe("The email address of the invitee").optional(),
+  status: import_zod4.z.enum(["active", "cancelled"]).describe("The status of the event").optional(),
+  max_results: import_zod4.z.number().describe("The maximum number of results to return. Default: 20.").optional()
+});
+
+// src/shared/parameters/clickup.ts
+var import_zod5 = require("zod");
+var checkConnectionParameters5 = import_zod5.z.object({});
+var startConnectionParameters5 = import_zod5.z.object({});
+var transferAgentParameters5 = import_zod5.z.object({
+  user_prompt: import_zod5.z.string().describe("The user prompt")
+});
+var createTaskParameters2 = import_zod5.z.object({
+  list_id: import_zod5.z.string().describe("The ID of the list"),
+  name: import_zod5.z.string().describe("Name of the task"),
+  description: import_zod5.z.string().describe("Description of the task"),
+  priority: import_zod5.z.enum(["Low", "Medium", "High", "Urgent"]).describe("Priority of the task"),
+  assignees: import_zod5.z.array(import_zod5.z.string()).describe("List of assignees"),
+  due_date: import_zod5.z.string().describe("Due date of the task").optional()
+});
+var deleteTaskParameters = import_zod5.z.object({
+  task_id: import_zod5.z.string().describe("The ID of the task")
+});
+var getTaskParameters2 = import_zod5.z.object({
+  task_id: import_zod5.z.string().describe("The ID of the task")
+});
+var listFoldersParameters = import_zod5.z.object({
+  space_id: import_zod5.z.string().describe("The ID of the space")
+});
+var listListsParameters = import_zod5.z.object({
+  folder_id: import_zod5.z.string().describe("The ID of the folder")
+});
+var listSpacesParameters = import_zod5.z.object({
+  workspace_id: import_zod5.z.string().describe("The ID of the workspace")
+});
+var listTasksParameters2 = import_zod5.z.object({
+  list_id: import_zod5.z.string().describe("The ID of the list")
+});
+var listWorkspacesParameters2 = import_zod5.z.object({});
+
+// src/shared/parameters/google-calendar.ts
+var import_zod6 = require("zod");
+var checkConnectionParameters6 = import_zod6.z.object({});
+var startConnectionParameters6 = import_zod6.z.object({});
+var transferAgentParameters6 = import_zod6.z.object({
+  user_prompt: import_zod6.z.string().describe("The user prompt")
+});
+var createEventParameters = import_zod6.z.object({
+  calendar_id: import_zod6.z.string().describe("The ID of Google Calendar"),
+  event_start_date: import_zod6.z.string().describe(
+    "The start date of the event in the format `yyyy-mm-dd`. For all-day events, enter the Event day in the format `yyyy-mm-dd`. For events with time, format according to RFC3339: `yyyy-mm-ddThh:mm:ss+01:00`."
+  ),
+  event_end_date: import_zod6.z.string().describe(
+    "The start date of the event in the format `yyyy-mm-dd`. For all-day events, enter the Event day in the format `yyyy-mm-dd`. For events with time, format according to RFC3339: `yyyy-mm-ddThh:mm:ss+01:00`."
+  ),
+  summary: import_zod6.z.string().describe("The title of the event.").optional(),
+  location: import_zod6.z.string().describe("The location of the event.").optional(),
+  description: import_zod6.z.string().describe("The description of the event.").optional(),
+  attendees: import_zod6.z.array(import_zod6.z.string()).describe("The email addresses of the attendees.").optional(),
+  repeat_frequency: import_zod6.z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).describe("The frequency of the event repetition.").optional(),
+  repeat_times: import_zod6.z.number().describe("The number of times the event repeats.").optional(),
+  repeat_interval: import_zod6.z.number().describe(
+    "The interval between event repetitions. To repeat every day, enter 1. To repeat every other day, enter 2."
+  ).optional(),
+  send_updates: import_zod6.z.enum(["all", "externalOnly", "none"]).describe("Whether to send updates.").optional(),
+  create_meet_room: import_zod6.z.boolean().describe("Whether to create a Google Meet room for this event.").optional(),
+  visibility: import_zod6.z.enum(["default", "public", "private", "confidential"]).describe(
+    "The visibility of the event. Defaults to default if not specified."
+  ).optional()
+});
+var deleteEventParameters = import_zod6.z.object({
+  calendar_id: import_zod6.z.string().describe("The ID of calendar"),
+  event_id: import_zod6.z.string().describe("The ID of event")
+});
+var getCalendarParameters = import_zod6.z.object({
+  calendar_id: import_zod6.z.string().describe("The ID of Google Calendar")
+});
+var getEventParameters2 = import_zod6.z.object({
+  calendar_id: import_zod6.z.string().describe("The ID of calendar"),
+  event_id: import_zod6.z.string().describe("The ID of event")
+});
+var listCalendarsParameters = import_zod6.z.object({});
+var listEventsParameters2 = import_zod6.z.object({
+  calendar_id: import_zod6.z.string().describe("The ID of calendar"),
+  order_by: import_zod6.z.enum(["startTime", "updated"]).describe("The order of the events returned in the result.").optional(),
+  q: import_zod6.z.string().describe("The search query.").optional(),
+  show_deleted: import_zod6.z.boolean().describe(
+    'Whether to include deleted events (with status equals "cancelled") in the result.'
+  ).optional(),
+  show_hidden_invitations: import_zod6.z.boolean().describe("Whether to include hidden invitations in the result.").optional(),
+  show_single_events: import_zod6.z.boolean().describe(
+    "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
+  ).optional(),
+  time_max: import_zod6.z.string().describe("Upper bound (exclusive) for an event's time to filter by.").optional(),
+  time_min: import_zod6.z.string().describe("Lower bound (exclusive) for an event's time to filter by.").optional(),
+  updated_min: import_zod6.z.string().describe("Lower bound for an event's last modification time to filter by.").optional(),
+  event_types: import_zod6.z.array(import_zod6.z.enum(["default", "focusTime", "outOfOffice", "workingLocation"])).describe("Filter events by event type.").optional()
+});
+var updateEventParameters = import_zod6.z.object({
+  calendar_id: import_zod6.z.string().describe("The ID of calendar"),
+  event_id: import_zod6.z.string().describe("The ID of event"),
+  summary: import_zod6.z.string().describe("The title of the event.").optional(),
+  event_start_date: import_zod6.z.string().describe(
+    "The start date of the event in the format `yyyy-mm-dd`. For all-day events, enter the Event day in the format `yyyy-mm-dd`. For events with time, format according to RFC3339: `yyyy-mm-ddThh:mm:ss+01:00`."
+  ).optional(),
+  event_end_date: import_zod6.z.string().describe(
+    "The start date of the event in the format `yyyy-mm-dd`. For all-day events, enter the Event day in the format `yyyy-mm-dd`. For events with time, format according to RFC3339: `yyyy-mm-ddThh:mm:ss+01:00`."
+  ).optional(),
+  location: import_zod6.z.string().describe("The location of the event.").optional(),
+  description: import_zod6.z.string().describe("The description of the event.").optional(),
+  attendees: import_zod6.z.array(import_zod6.z.string()).describe("The email addresses of the attendees.").optional(),
+  repeat_frequency: import_zod6.z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).describe("The frequency of the event repetition.").optional(),
+  repeat_times: import_zod6.z.number().describe("The number of times the event repeats.").optional(),
+  repeat_interval: import_zod6.z.number().describe(
+    "The interval between event repetitions. To repeat every day, enter 1. To repeat every other day, enter 2."
+  ).optional(),
+  send_updates: import_zod6.z.enum(["all", "externalOnly", "none"]).describe("Whether to send updates.").optional(),
+  create_meet_room: import_zod6.z.boolean().describe("Whether to create a Google Meet room for this event.").optional(),
+  visibility: import_zod6.z.enum(["default", "public", "private", "confidential"]).describe("The visibility of the event.").optional()
+});
+
+// src/shared/parameters/google-docs.ts
+var import_zod7 = require("zod");
+var checkConnectionParameters7 = import_zod7.z.object({});
+var startConnectionParameters7 = import_zod7.z.object({});
+var transferAgentParameters7 = import_zod7.z.object({
+  user_prompt: import_zod7.z.string().describe("The user prompt")
+});
+var appendTextParameters = import_zod7.z.object({
+  doc_id: import_zod7.z.string().describe("The ID of Google document"),
+  text: import_zod7.z.string().describe("The text of Google document")
+});
+var createDocumentParameters = import_zod7.z.object({
+  title: import_zod7.z.string().describe("The title of Google document"),
+  text: import_zod7.z.string().describe("The text of Google document")
+});
+var findDocumentParameters = import_zod7.z.object({
+  q: import_zod7.z.string().describe("The search query")
+});
+var getDocumentParameters = import_zod7.z.object({
+  doc_id: import_zod7.z.string().describe("The ID of Google document")
+});
+
+// src/shared/parameters/google-drive.ts
+var import_zod8 = require("zod");
+var checkConnectionParameters8 = import_zod8.z.object({});
+var startConnectionParameters8 = import_zod8.z.object({});
+var transferAgentParameters8 = import_zod8.z.object({
+  user_prompt: import_zod8.z.string().describe("The user prompt")
+});
+var createFileParameters = import_zod8.z.object({
+  content: import_zod8.z.string().describe("The text content of the file to create"),
+  mime_type: import_zod8.z.string().describe("The MIME type of the file to create"),
+  name: import_zod8.z.string().optional().describe("The name of the file to create"),
+  parent_id: import_zod8.z.string().optional().describe("The ID of the parent folder to create the file in")
+});
+var createFolderParameters = import_zod8.z.object({
+  parent_id: import_zod8.z.string().describe("The ID of the parent folder to create the folder in")
+});
+var deleteFileParameters = import_zod8.z.object({
+  file_id: import_zod8.z.string().describe("The ID of the file to delete")
+});
+var findFileParameters = import_zod8.z.object({
+  q: import_zod8.z.string().describe("The search query")
+});
+var findFolderParameters = import_zod8.z.object({
+  q: import_zod8.z.string().describe("The search query"),
+  include_trashed: import_zod8.z.boolean().optional().describe("Whether to include trashed folders")
+});
+var getFileParameters = import_zod8.z.object({
+  file_id: import_zod8.z.string().describe("The ID of the file to retrieve")
+});
+var listFilesParameters = import_zod8.z.object({
+  folder_id: import_zod8.z.string().optional().describe("The ID of folder")
+});
+
+// src/shared/parameters/google-mail.ts
+var import_zod9 = require("zod");
+var checkConnectionParameters9 = import_zod9.z.object({});
+var startConnectionParameters9 = import_zod9.z.object({});
+var transferAgentParameters9 = import_zod9.z.object({
+  user_prompt: import_zod9.z.string().describe("The user prompt")
+});
+var addLabelToEmailParameters = import_zod9.z.object({
+  message_id: import_zod9.z.string().describe("The ID of the message"),
+  label_ids: import_zod9.z.array(import_zod9.z.string()).describe("List of label IDs to add to the message")
+});
+var createDraftParameters = import_zod9.z.object({
+  to: import_zod9.z.array(import_zod9.z.string()).describe("List of recipient emails"),
+  subject: import_zod9.z.string().describe("The subject of the email"),
+  body: import_zod9.z.string().describe("The body of the email"),
+  cc: import_zod9.z.array(import_zod9.z.string()).describe("List of emails to CC").optional(),
+  bcc: import_zod9.z.array(import_zod9.z.string()).describe("List of emails to BCC").optional(),
+  body_type: import_zod9.z.enum(["plaintext", "html"]).describe(
+    "The type of the email body. Default: plaintext. Possible values are: plaintext, html"
+  ).optional()
+});
+var findEmailParameters = import_zod9.z.object({
+  q: import_zod9.z.string().describe("The search query"),
+  label_ids: import_zod9.z.array(import_zod9.z.string()).describe(
+    "List of label IDs. Only messages that match all of the specified labels are returned."
+  ).optional(),
+  include_spam_trash: import_zod9.z.boolean().describe(
+    "Whether to include messages from `SPAM` and `TRASH` in the results. Default: False."
+  ).optional(),
+  max_results: import_zod9.z.number().describe("The maximum number of results to return. Default: 10. Max: 500.").optional()
+});
+var listLabelsParameters = import_zod9.z.object({});
+var removeLabelFromEmailParameters = import_zod9.z.object({
+  message_id: import_zod9.z.string().describe("The ID of the message"),
+  label_ids: import_zod9.z.array(import_zod9.z.string()).describe("List of label IDs to remove from the message")
+});
+var sendEmailParameters = import_zod9.z.object({
+  to: import_zod9.z.array(import_zod9.z.string()).describe("List of recipient emails"),
+  subject: import_zod9.z.string().describe("The subject of the email"),
+  body: import_zod9.z.string().describe("The body of the email"),
+  cc: import_zod9.z.array(import_zod9.z.string()).describe("List of emails to CC").optional(),
+  bcc: import_zod9.z.array(import_zod9.z.string()).describe("List of emails to BCC").optional(),
+  body_type: import_zod9.z.enum(["plaintext", "html"]).describe(
+    "The type of the email body. Default: plaintext. Possible values are: plaintext, html"
+  ).optional()
+});
+
+// src/shared/parameters/google-sheet.ts
+var import_zod10 = require("zod");
+var checkConnectionParameters10 = import_zod10.z.object({});
+var startConnectionParameters10 = import_zod10.z.object({});
+var transferAgentParameters10 = import_zod10.z.object({
+  user_prompt: import_zod10.z.string().describe("The user prompt")
+});
+var addColumnParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet"),
+  column: import_zod10.z.string().describe("The column letter")
+});
+var addMultipleRowsParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet"),
+  values: import_zod10.z.array(import_zod10.z.array(import_zod10.z.string())).describe("The values of the rows")
+});
+var clearCellParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet"),
+  cell: import_zod10.z.string().describe("The A1 notation of the cell. E.g., `A1`")
+});
+var clearRowsParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet"),
+  start_row: import_zod10.z.number().describe("The starting row number"),
+  end_row: import_zod10.z.number().describe("The ending row number (inclusive)")
+});
+var createSpreadsheetParameters = import_zod10.z.object({
+  title: import_zod10.z.string().describe("The title of Google spreadsheet")
+});
+var createWorksheetParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  title: import_zod10.z.string().describe("The title of Google spreadsheet")
+});
+var deleteRowsParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet"),
+  start_row: import_zod10.z.number().describe("The starting row number"),
+  end_row: import_zod10.z.number().describe("The ending row number (inclusive)")
+});
+var deleteWorksheetParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet")
+});
+var findRowParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet"),
+  column: import_zod10.z.string().describe("The column letter"),
+  value: import_zod10.z.string().describe("The value to search for")
+});
+var getCellParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet"),
+  cell: import_zod10.z.string().describe("The A1 notation of the cell. E.g., `A1`")
+});
+var getSpreadsheetParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet")
+});
+var getValuesInRangeParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet"),
+  range: import_zod10.z.string().describe("The A1 notation of the values to retrieve. E.g., `A1:E5`")
+});
+var listWorksheetsParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet")
+});
+var updateCellParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet"),
+  cell: import_zod10.z.string().describe("The A1 notation of the cell. E.g., `A1`"),
+  value: import_zod10.z.string().describe("The value to update")
+});
+var updateMultipleRowsParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet"),
+  range: import_zod10.z.string().describe("The A1 notation of the values to retrieve. E.g., `A1:E5`"),
+  values: import_zod10.z.array(import_zod10.z.array(import_zod10.z.string())).describe("The values to update")
+});
+var updateRowParameters = import_zod10.z.object({
+  spreadsheet_id: import_zod10.z.string().describe("The ID of Google spreadsheet"),
+  worksheet_id: import_zod10.z.string().describe("The ID of worksheet"),
+  row: import_zod10.z.number().describe("The row number"),
+  values: import_zod10.z.array(import_zod10.z.string()).describe("The values to update")
+});
+
+// src/shared/parameters/hubspot.ts
+var import_zod11 = require("zod");
+var checkConnectionParameters11 = import_zod11.z.object({});
+var startConnectionParameters11 = import_zod11.z.object({});
+var transferAgentParameters11 = import_zod11.z.object({
+  user_prompt: import_zod11.z.string().describe("The user prompt")
+});
+var associationTypesSchema = import_zod11.z.object({
+  association_category: import_zod11.z.literal("HUBSPOT_DEFINED"),
+  association_type_id: import_zod11.z.union([
+    import_zod11.z.literal(279),
+    // Contact to Company
+    import_zod11.z.literal(449),
+    // Contact to Contact
+    import_zod11.z.literal(4),
+    // Contact to Deal
+    import_zod11.z.literal(15),
+    // Contact to Ticket
+    import_zod11.z.literal(341),
+    // Deal to Company
+    import_zod11.z.literal(3),
+    // Deal to Contact
+    import_zod11.z.literal(451),
+    // Deal to Deal
+    import_zod11.z.literal(27)
+    // Deal to Ticket
+  ])
+});
+var associationSchema = import_zod11.z.object({
+  types: import_zod11.z.array(associationTypesSchema).optional(),
+  to: import_zod11.z.string().optional()
+});
+var contactPropertiesSchema = import_zod11.z.object({
+  firstname: import_zod11.z.string().optional(),
+  lastname: import_zod11.z.string().optional(),
+  email: import_zod11.z.string().optional(),
+  company: import_zod11.z.string().optional(),
+  website: import_zod11.z.string().optional(),
+  mobilephone: import_zod11.z.string().optional(),
+  phone: import_zod11.z.string().optional(),
+  fax: import_zod11.z.string().optional(),
+  address: import_zod11.z.string().optional(),
+  city: import_zod11.z.string().optional(),
+  state: import_zod11.z.string().optional(),
+  zip: import_zod11.z.string().optional(),
+  country: import_zod11.z.string().optional(),
+  jobtitle: import_zod11.z.string().optional(),
+  industry: import_zod11.z.string().optional(),
+  lifecyclestage: import_zod11.z.union([
+    import_zod11.z.literal("subscriber"),
+    import_zod11.z.literal("lead"),
+    import_zod11.z.literal("marketingqualifiedlead"),
+    import_zod11.z.literal("salesqualifiedlead"),
+    import_zod11.z.literal("opportunity"),
+    import_zod11.z.literal("customer"),
+    import_zod11.z.literal("evangelist"),
+    import_zod11.z.literal("other")
+  ]).optional()
+});
+var createContactParameters = import_zod11.z.object({
+  associations: import_zod11.z.array(associationSchema).optional(),
+  properties: contactPropertiesSchema.optional()
+});
+var getContactParameters = import_zod11.z.object({
+  contact_id: import_zod11.z.string().describe("The ID of the contact")
+});
+var listContactsParameters = import_zod11.z.object({
+  limit: import_zod11.z.number().optional().default(100).describe(
+    "The maximum number of results to display per page. Default: 100. Maximum: 100."
+  ),
+  after: import_zod11.z.string().optional().describe(
+    "The paging cursor token of the last successfully read resource will be returned as the paging.next.after JSON property of a paged response containing more results."
+  ),
+  properties: import_zod11.z.array(import_zod11.z.string()).optional().describe(
+    "List of the properties to be returned in the response. If any of the specified properties are not present on the requested object(s), they will be ignored."
+  ),
+  associations: import_zod11.z.array(import_zod11.z.string()).optional().describe(
+    "List of object types to retrieve associated IDs for. If any of the specified associations do not exist, they will be ignored."
+  ),
+  archived: import_zod11.z.boolean().optional().describe("Whether to return only results that have been archived.")
+});
+var searchContactsParameters = import_zod11.z.object({
+  query: import_zod11.z.string().optional().describe("The query of the search."),
+  limit: import_zod11.z.number().int().min(1).max(200).default(200).describe(
+    "The maximum number of results to display per page. Default: 200. Maximum: 200."
+  ),
+  after: import_zod11.z.string().optional().describe(
+    "The paging cursor token of the last successfully read resource will be returned as the paging.next.after JSON property of a paged response containing more results."
+  ),
+  sorts: import_zod11.z.array(
+    import_zod11.z.object({
+      propertyName: import_zod11.z.string().describe("The name of the property."),
+      direction: import_zod11.z.enum(["ASCENDING", "DESCENDING"]).describe("The direction of the sort.")
+    })
+  ).optional().describe("List of sorts containing the following keys:"),
+  properties: import_zod11.z.array(import_zod11.z.string()).optional().describe(
+    "List of the properties to be returned in the response. If any of the specified properties are not present on the requested object(s), they will be ignored."
+  ),
+  filter_groups: import_zod11.z.array(
+    import_zod11.z.object({
+      filters: import_zod11.z.array(
+        import_zod11.z.object({
+          high_value: import_zod11.z.string().optional().describe("The maximum value of a range."),
+          property_name: import_zod11.z.string().optional().describe("The name of the property."),
+          values: import_zod11.z.array(import_zod11.z.string()).optional().describe("List of values to compare."),
+          value: import_zod11.z.string().optional().describe("The value to compare."),
+          operator: import_zod11.z.enum([
+            "IN",
+            "NOT_HAS_PROPERTY",
+            "LT",
+            "EQ",
+            "GT",
+            "NOT_IN",
+            "GTE",
+            "CONTAINS_TOKEN",
+            "HAS_PROPERTY",
+            "LTE",
+            "NOT_CONTAINS_TOKEN",
+            "BETWEEN",
+            "NEQ"
+          ]).optional().describe("The operator of the filter. Possible values are:")
+        })
+      ).optional().describe("List of filters containing the following keys")
+    })
+  ).optional().describe("List of filter groups containing the following keys.")
+});
+var mergeContactsParameters = import_zod11.z.object({
+  object_id_to_merge: import_zod11.z.string({
+    description: "The ID of the object to merge."
+  }),
+  primary_object_id: import_zod11.z.string({
+    description: "The ID of the primary object of the merge."
+  })
+});
+var updateContactParameters = import_zod11.z.object({
+  contact_id: import_zod11.z.string(),
+  properties: import_zod11.z.optional(
+    import_zod11.z.object({
+      firstname: import_zod11.z.optional(import_zod11.z.string()),
+      lastname: import_zod11.z.optional(import_zod11.z.string()),
+      email: import_zod11.z.optional(import_zod11.z.string()),
+      company: import_zod11.z.optional(import_zod11.z.string()),
+      website: import_zod11.z.optional(import_zod11.z.string()),
+      mobilephone: import_zod11.z.optional(import_zod11.z.string()),
+      phone: import_zod11.z.optional(import_zod11.z.string()),
+      fax: import_zod11.z.optional(import_zod11.z.string()),
+      address: import_zod11.z.optional(import_zod11.z.string()),
+      city: import_zod11.z.optional(import_zod11.z.string()),
+      state: import_zod11.z.optional(import_zod11.z.string()),
+      zip: import_zod11.z.optional(import_zod11.z.string()),
+      country: import_zod11.z.optional(import_zod11.z.string()),
+      jobtitle: import_zod11.z.optional(import_zod11.z.string()),
+      industry: import_zod11.z.optional(import_zod11.z.string()),
+      lifecyclestage: import_zod11.z.optional(
+        import_zod11.z.enum([
+          "subscriber",
+          "lead",
+          "marketingqualifiedlead",
+          "salesqualifiedlead",
+          "opportunity",
+          "customer",
+          "evangelist",
+          "other"
+        ])
+      )
+    })
+  )
+});
+var deleteContactParameters = import_zod11.z.object({
+  contact_id: import_zod11.z.string().describe("The ID of the contact")
+});
+var dealPropertiesSchema = import_zod11.z.object({
+  dealname: import_zod11.z.string(),
+  dealstage: import_zod11.z.enum([
+    "appointmentscheduled",
+    "qualifiedtobuy",
+    "presentationscheduled",
+    "decisionmakerboughtin",
+    "contractsent",
+    "closedwon",
+    "closedlost"
+  ]),
+  amount: import_zod11.z.number().optional(),
+  closed_lost_reason: import_zod11.z.string().optional(),
+  closed_won_reason: import_zod11.z.string().optional(),
+  closedate: import_zod11.z.date().optional(),
+  createdate: import_zod11.z.date().optional(),
+  dealtype: import_zod11.z.enum(["newbusiness", "existingbusiness"]).optional(),
+  description: import_zod11.z.string().optional(),
+  hs_priority: import_zod11.z.enum(["low", "medium", "high"]).optional(),
+  pipeline: import_zod11.z.enum(["default"]).optional()
+});
+var createDealParameters = import_zod11.z.object({
+  associations: import_zod11.z.array(associationSchema).optional(),
+  properties: dealPropertiesSchema.optional()
+});
+var getDealParameters = import_zod11.z.object({
+  deal_id: import_zod11.z.string().describe("The ID of the deal")
+});
+var listDealsParameters = import_zod11.z.object({
+  limit: import_zod11.z.number().optional().describe(
+    "The maximum number of results to display per page. Default: 100. Maximum: 100."
+  ),
+  after: import_zod11.z.string().optional().describe(
+    "The paging cursor token of the last successfully read resource will be returned as the paging.next.after JSON property of a paged response containing more results."
+  ),
+  properties: import_zod11.z.array(import_zod11.z.string()).optional().describe(
+    "List of the properties to be returned in the response. If any of the specified properties are not present on the requested object(s), they will be ignored."
+  ),
+  associations: import_zod11.z.array(import_zod11.z.string()).optional().describe(
+    "List of object types to retrieve associated IDs for. If any of the specified associations do not exist, they will be ignored."
+  ),
+  archived: import_zod11.z.boolean().optional().describe("Whether to return only results that have been archived.")
+});
+var searchDealsParameters = import_zod11.z.object({
+  query: import_zod11.z.string().optional(),
+  limit: import_zod11.z.number().optional().default(200),
+  after: import_zod11.z.string().optional(),
+  sorts: import_zod11.z.array(
+    import_zod11.z.object({
+      propertyName: import_zod11.z.string(),
+      direction: import_zod11.z.union([import_zod11.z.literal("ASCENDING"), import_zod11.z.literal("DESCENDING")])
+    })
+  ).optional(),
+  properties: import_zod11.z.array(import_zod11.z.string()).optional(),
+  filter_groups: import_zod11.z.array(
+    import_zod11.z.object({
+      filters: import_zod11.z.array(
+        import_zod11.z.object({
+          high_value: import_zod11.z.string().optional(),
+          property_name: import_zod11.z.string().optional(),
+          values: import_zod11.z.array(import_zod11.z.string()).optional(),
+          value: import_zod11.z.string().optional(),
+          operator: import_zod11.z.union([
+            import_zod11.z.literal("IN"),
+            import_zod11.z.literal("NOT_HAS_PROPERTY"),
+            import_zod11.z.literal("LT"),
+            import_zod11.z.literal("EQ"),
+            import_zod11.z.literal("GT"),
+            import_zod11.z.literal("NOT_IN"),
+            import_zod11.z.literal("GTE"),
+            import_zod11.z.literal("CONTAINS_TOKEN"),
+            import_zod11.z.literal("HAS_PROPERTY"),
+            import_zod11.z.literal("LTE"),
+            import_zod11.z.literal("NOT_CONTAINS_TOKEN"),
+            import_zod11.z.literal("BETWEEN"),
+            import_zod11.z.literal("NEQ")
+          ])
+        })
+      ).optional()
+    })
+  ).optional()
+});
+var mergeDealParameters = import_zod11.z.object({
+  object_id_to_merge: import_zod11.z.string().describe("The ID of the object to merge."),
+  primary_object_id: import_zod11.z.string().describe("The ID of the primary object of the merge.")
+});
+var updateDealParameters = import_zod11.z.object({
+  deal_id: import_zod11.z.string().describe("The ID of the deal."),
+  properties: import_zod11.z.object({
+    firstname: import_zod11.z.string().optional().describe("The first name of the contact."),
+    lastname: import_zod11.z.string().optional().describe("The last name of the contact."),
+    email: import_zod11.z.string().optional().describe("The email address of the contact."),
+    company: import_zod11.z.string().optional().describe("The company of the contact."),
+    website: import_zod11.z.string().optional().describe("The website of the contact."),
+    mobilephone: import_zod11.z.string().optional().describe("The mobile phone number of the contact."),
+    phone: import_zod11.z.string().optional().describe("The phone number of the contact."),
+    fax: import_zod11.z.string().optional().describe("The fax number of the contact."),
+    address: import_zod11.z.string().optional().describe("The address of the contact."),
+    city: import_zod11.z.string().optional().describe("The city of the contact."),
+    state: import_zod11.z.string().optional().describe("The state of the contact."),
+    zip: import_zod11.z.string().optional().describe("The zip code of the contact."),
+    country: import_zod11.z.string().optional().describe("The country of the contact."),
+    jobtitle: import_zod11.z.string().optional().describe("The job title of the contact."),
+    industry: import_zod11.z.string().optional().describe("The industry of the contact."),
+    lifecyclestage: import_zod11.z.enum([
+      "subscriber",
+      "lead",
+      "marketingqualifiedlead",
+      "salesqualifiedlead",
+      "opportunity",
+      "customer",
+      "evangelist",
+      "other"
+    ]).optional().describe("The lifecycle stage of the contact.")
+  }).optional()
+});
+var deleteDealParameters = import_zod11.z.object({
+  deal_id: import_zod11.z.string().describe("The ID of the deal")
+});
+
+// src/shared/parameters/jira.ts
+var import_zod12 = require("zod");
+var checkConnectionParameters12 = import_zod12.z.object({});
+var startConnectionParameters12 = import_zod12.z.object({});
+var transferAgentParameters12 = import_zod12.z.object({
+  user_prompt: import_zod12.z.string().describe("The user prompt")
+});
+var listCloudsParameters = import_zod12.z.object({});
+var getIssueParameters = import_zod12.z.object({
+  cloud_id: import_zod12.z.string().describe("The ID of the cloud"),
+  issue_id: import_zod12.z.string().describe("The ID of the issue")
+});
+var listIssuesParameters = import_zod12.z.object({
+  cloud_id: import_zod12.z.string().describe("The ID of the cloud")
+});
+var addCommentToIssueParameters = import_zod12.z.object({
+  cloud_id: import_zod12.z.string().describe("The ID of the cloud"),
+  issue_id: import_zod12.z.string().describe("The ID of the issue"),
+  comment: import_zod12.z.string().describe("The comment to add to the issue")
+});
+var listCommentsParameters = import_zod12.z.object({
+  cloud_id: import_zod12.z.string().describe("The ID of the cloud"),
+  issue_id: import_zod12.z.string().describe("The ID of the issue")
+});
+var updateCommentParameters = import_zod12.z.object({
+  cloud_id: import_zod12.z.string().describe("The ID of the cloud"),
+  issue_id: import_zod12.z.string().describe("The ID of the issue"),
+  comment_id: import_zod12.z.string().describe("The ID of the comment"),
+  comment: import_zod12.z.string().describe("The new comment")
+});
+var listProjectsParameters2 = import_zod12.z.object({
+  cloud_id: import_zod12.z.string().describe("The ID of the cloud")
+});
+var getUserParameters = import_zod12.z.object({
+  account_id: import_zod12.z.string().describe("The ID of the user account")
+});
+var listUsersParameters = import_zod12.z.object({
+  cloud_id: import_zod12.z.string().describe("The ID of the cloud")
+});
+
+// src/shared/parameters/jotform.ts
+var import_zod13 = require("zod");
+var checkConnectionParameters13 = import_zod13.z.object({});
+var startConnectionParameters13 = import_zod13.z.object({});
+var transferAgentParameters13 = import_zod13.z.object({
+  user_prompt: import_zod13.z.string().describe("The user prompt")
+});
+var listFormsParameters = import_zod13.z.object({});
+var listSubmissionsParameters = import_zod13.z.object({
+  form_id: import_zod13.z.string().describe("The ID of form")
+});
+
+// src/shared/parameters/klaviyo.ts
+var import_zod14 = require("zod");
+var checkConnectionParameters14 = import_zod14.z.object({});
+var startConnectionParameters14 = import_zod14.z.object({});
+var transferAgentParameters14 = import_zod14.z.object({
+  user_prompt: import_zod14.z.string().describe("The user prompt")
+});
+var addProfilesToListParameters = import_zod14.z.object({
+  list_id: import_zod14.z.string().describe("The list ID"),
+  profile_ids: import_zod14.z.array(import_zod14.z.string()).describe("A list of profile IDs")
+});
+var assignTemplateToCampaignMessageParameters = import_zod14.z.object({
+  campaign_message_id: import_zod14.z.string().describe("The ID of the campaign message"),
+  template_id: import_zod14.z.string().describe("The ID of the template")
+});
+var createCampaignParameters = import_zod14.z.object({
+  name: import_zod14.z.string().describe("The name of the campaign"),
+  audiences: import_zod14.z.object({
+    included: import_zod14.z.array(import_zod14.z.string()).describe("The IDs of included lists"),
+    excluded: import_zod14.z.array(import_zod14.z.string()).describe("The IDs of excluded lists")
+  }),
+  campaign_messages: import_zod14.z.array(
+    import_zod14.z.object({
+      type: import_zod14.z.enum(["campaign-message"]),
+      attributes: import_zod14.z.object({
+        definition: import_zod14.z.object({
+          channel: import_zod14.z.enum(["email", "sms", "mobile_push"]).describe("The channel of the campaign message."),
+          label: import_zod14.z.string().optional().describe("The label of the campaign message."),
+          content: import_zod14.z.object({
+            subject: import_zod14.z.string().optional().describe("The subject of the campaign message."),
+            previewText: import_zod14.z.string().optional().describe("The preview text of the campaign message."),
+            fromEmail: import_zod14.z.string().optional().describe("The from email of the campaign message."),
+            fromLabel: import_zod14.z.string().optional().describe("The from label of the campaign message."),
+            replyToEmail: import_zod14.z.string().optional().describe("The reply to email of the campaign message."),
+            ccEmail: import_zod14.z.string().optional().describe("The cc email of the campaign message."),
+            bccEmail: import_zod14.z.string().optional().describe("The bcc email of the campaign message.")
+          }).optional(),
+          renderOptions: import_zod14.z.object({
+            shortenLinks: import_zod14.z.boolean().optional().describe("Whether to shorten links."),
+            addOrgPrefix: import_zod14.z.boolean().optional().describe("Whether to add org prefix."),
+            addInfoLinks: import_zod14.z.boolean().optional().describe("Whether to add info links."),
+            addOptOutLanguage: import_zod14.z.boolean().optional().describe("Whether to add opt out language.")
+          }).optional(),
+          kvPairs: import_zod14.z.object({}).optional().describe("The kv pairs of the campaign message."),
+          options: import_zod14.z.object({
+            type: import_zod14.z.enum(["open_app", "deep_link"]).describe("The type of the options."),
+            iosDeepLink: import_zod14.z.string().optional().describe("The ios deep link of the campaign message."),
+            androidDeepLink: import_zod14.z.string().optional().describe(
+              "The android deep link of the campaign message."
+            ),
+            display: import_zod14.z.boolean().optional().describe(
+              'Whether to display the campaign message. Required if type is "open_app".'
+            )
+          }).optional().describe("The options of the campaign message.")
+        }).describe("The definition of the campaign message.")
+      }).describe("THe attributes of the campaign message.")
+    }).describe("The data of the campaign message.")
+  ),
+  send_strategy: import_zod14.z.object({
+    method: import_zod14.z.enum(["static", "throttled", "immediate", "smart_send_time"]).describe("The method of the send strategy."),
+    datetime: import_zod14.z.string().optional().describe(
+      'The ISO 8601 date and time of the send time. Requred if method is "static".'
+    ),
+    options: import_zod14.z.object({
+      isLocalTime: import_zod14.z.boolean().describe("Whether to use local time"),
+      sendPastRecipientsImmediately: import_zod14.z.boolean().optional().describe("Whether to send past recipients immediately.")
+    }).optional().describe("The options of the send strategy."),
+    throttlePercentage: import_zod14.z.number().optional().describe(
+      'The throttle percentage of the send strategy. Required if method is "throttled"'
+    ),
+    date: import_zod14.z.string().optional().describe(
+      'The ISO 8601 date of the send time. Required if method is "smart_send_time"'
+    )
+  }).optional().describe("The send strategy of the campaign."),
+  send_options: import_zod14.z.object({
+    useSmartSending: import_zod14.z.boolean().optional().describe("Whether to use smart sending.")
+  }).optional().describe("The send options of the campaign."),
+  tracking_options: import_zod14.z.object({
+    addTrackingParams: import_zod14.z.boolean().optional().describe("Whether to add tracking params."),
+    customTrackingParams: import_zod14.z.array(
+      import_zod14.z.object({
+        type: import_zod14.z.enum(["static", "dynamic"]).describe("The type of the custom tracking param."),
+        value: import_zod14.z.string().describe("The value of the custom tracking param."),
+        name: import_zod14.z.string().describe("The name of the custom tracking param.")
+      })
+    ).optional().describe("The custom tracking params of the campaign."),
+    isTrackingClicks: import_zod14.z.boolean().optional().describe("Whether to track clicks."),
+    isTrackingOpens: import_zod14.z.boolean().optional().describe("Whether to track opens.")
+  }).optional().describe("The tracking options of the campaign.")
+});
+var createListParameters = import_zod14.z.object({
+  name: import_zod14.z.string().describe("The name of the list.")
+});
+var createProfileParameters = import_zod14.z.object({
+  email: import_zod14.z.string().optional().describe("The email of the user."),
+  phone_number: import_zod14.z.string().optional().describe("The phone number of the user."),
+  external_id: import_zod14.z.string().optional().describe("The external ID of the user."),
+  first_name: import_zod14.z.string().optional().describe("The first name of the user."),
+  last_name: import_zod14.z.string().optional().describe("The last name of the user."),
+  organization: import_zod14.z.string().optional().describe("The organization of the user."),
+  locale: import_zod14.z.string().optional().describe("The locale of the user."),
+  title: import_zod14.z.string().optional().describe("The title of the user."),
+  image: import_zod14.z.string().optional().describe("The image of the user."),
+  location: import_zod14.z.string().optional().describe("The location of the user."),
+  properties: import_zod14.z.object({}).optional().describe("The properties of the user.")
+});
+var createTemplateParameters = import_zod14.z.object({
+  name: import_zod14.z.string().describe("The name of the template."),
+  html: import_zod14.z.string().optional().describe("The HTML content of the template."),
+  text: import_zod14.z.string().optional().describe("The text content of the template.")
+});
+var getCampaignMessagesParameters = import_zod14.z.object({
+  campaign_id: import_zod14.z.string().describe("The ID of the campaign.")
+});
+var getCampaignSendJobParameters = import_zod14.z.object({
+  campaign_id: import_zod14.z.string().describe("The ID of the campaign.")
+});
+var getCampaignsParameters = import_zod14.z.object({
+  filter: import_zod14.z.string().describe(
+    "The filter of the campaigns. A channel filter is required to list campaigns. Please provide either:\n`equals(messages.channel,'email')` to list email campaigns, `equals(messages.channel,'sms')` to list SMS campaigns, `equals(messages.channel,'mobile_push')` to list mobile push campaigns."
+  )
+});
+var getListsParameters = import_zod14.z.object({});
+var getProfilesForListParameters = import_zod14.z.object({
+  list_id: import_zod14.z.string().describe("The list ID.")
+});
+var getProfilesParameters = import_zod14.z.object({});
+var getTemplatesParameters = import_zod14.z.object({});
+var sendCampaignParameters = import_zod14.z.object({
+  campaign_id: import_zod14.z.string().describe("The ID of the campaign.")
+});
+
+// src/shared/parameters/mailchimp.ts
+var import_zod15 = require("zod");
+var checkConnectionParameters15 = import_zod15.z.object({});
+var startConnectionParameters15 = import_zod15.z.object({});
+var transferAgentParameters15 = import_zod15.z.object({
+  user_prompt: import_zod15.z.string().describe("The user prompt")
+});
+var getCampaignParameters = import_zod15.z.object({
+  campaign_id: import_zod15.z.string().describe("The ID of the campaign")
+});
+var searchCampaignsParameters = import_zod15.z.object({
+  q: import_zod15.z.string().describe("The search query")
+});
+
+// src/shared/parameters/notion.ts
+var import_zod16 = require("zod");
+var checkConnectionParameters16 = import_zod16.z.object({});
+var startConnectionParameters16 = import_zod16.z.object({});
+var transferAgentParameters16 = import_zod16.z.object({
+  user_prompt: import_zod16.z.string().describe("The user prompt")
+});
+var createPageParameters = import_zod16.z.object({
+  parent_page_id: import_zod16.z.string().describe("The identifier for a Notion parent page"),
+  title: import_zod16.z.string().describe("The title of the page"),
+  content: import_zod16.z.string().describe("Content of the page")
+});
+var findPageParameters = import_zod16.z.object({
+  title: import_zod16.z.string().describe("The title of the page to search")
+});
+var getPageParameters = import_zod16.z.object({
+  page_id: import_zod16.z.string().describe("The ID of page")
+});
+
+// src/shared/parameters/outlook.ts
+var import_zod17 = require("zod");
+var checkConnectionParameters17 = import_zod17.z.object({});
+var startConnectionParameters17 = import_zod17.z.object({});
+var transferAgentParameters17 = import_zod17.z.object({
+  user_prompt: import_zod17.z.string().describe("The user prompt")
+});
+var createDraftParameters2 = import_zod17.z.object({
+  to: import_zod17.z.array(import_zod17.z.string()).describe("List of recipient emails"),
+  subject: import_zod17.z.string().describe("The subject of the email"),
+  body: import_zod17.z.string().describe("The body of the email"),
+  cc: import_zod17.z.array(import_zod17.z.string()).describe("List of emails to CC").optional(),
+  bcc: import_zod17.z.array(import_zod17.z.string()).describe("List of emails to BCC").optional(),
+  body_type: import_zod17.z.enum(["plaintext", "html"]).describe(
+    "The type of the email body. Default: plaintext. Possible values are: plaintext, html"
+  ).optional()
+});
+var findEmailParameters2 = import_zod17.z.object({
+  q: import_zod17.z.string().describe("The search query"),
+  max_results: import_zod17.z.number().describe("The maximum number of results to return. Default is 10.").optional()
+});
+var sendEmailParameters2 = import_zod17.z.object({
+  to: import_zod17.z.array(import_zod17.z.string()).describe("List of recipient emails"),
+  subject: import_zod17.z.string().describe("The subject of the email"),
+  body: import_zod17.z.string().describe("The body of the email"),
+  cc: import_zod17.z.array(import_zod17.z.string()).describe("List of emails to CC").optional(),
+  bcc: import_zod17.z.array(import_zod17.z.string()).describe("List of emails to BCC").optional(),
+  body_type: import_zod17.z.enum(["plaintext", "html"]).describe(
+    "The type of the email body. Default: plaintext. Possible values are: plaintext, html"
+  ).optional()
+});
+
+// src/shared/parameters/pipedrive.ts
+var import_zod18 = require("zod");
+var checkConnectionParameters18 = import_zod18.z.object({});
+var startConnectionParameters18 = import_zod18.z.object({});
+var transferAgentParameters18 = import_zod18.z.object({
+  user_prompt: import_zod18.z.string().describe("The user prompt")
+});
+var searchPeopleParameters = import_zod18.z.object({
+  q: import_zod18.z.string().describe("The search query"),
+  max_results: import_zod18.z.number().describe("The maximum number of results to return. Default is 20.").optional()
+});
+
+// src/shared/parameters/salesforce.ts
+var import_zod19 = require("zod");
+var checkConnectionParameters19 = import_zod19.z.object({});
+var startConnectionParameters19 = import_zod19.z.object({});
+var transferAgentParameters19 = import_zod19.z.object({
+  user_prompt: import_zod19.z.string().describe("The user prompt")
+});
+var createContactParameters2 = import_zod19.z.object({
+  first_name: import_zod19.z.string().describe("The first name of the contact"),
+  last_name: import_zod19.z.string().describe("The last name of the contact"),
+  description: import_zod19.z.string().optional().describe("The description of the contact"),
+  email: import_zod19.z.string().email().optional().describe("The email of the contact"),
+  phone: import_zod19.z.string().optional().describe("The phone number of the contact")
+});
+var getContactParameters2 = import_zod19.z.object({
+  contact_id: import_zod19.z.string().describe("The ID of the contact")
+});
+var listContactsParameters2 = import_zod19.z.object({});
+
+// src/shared/parameters/shopify.ts
+var import_zod20 = require("zod");
+var checkConnectionParameters20 = import_zod20.z.object({});
+var startConnectionParameters20 = import_zod20.z.object({});
+var transferAgentParameters20 = import_zod20.z.object({
+  user_prompt: import_zod20.z.string().describe("The user prompt")
+});
+var createOrderParameters = import_zod20.z.object({
+  line_items: import_zod20.z.array(
+    import_zod20.z.object({
+      title: import_zod20.z.string().describe("The title of the product"),
+      price: import_zod20.z.number().describe("The price of the product"),
+      quantity: import_zod20.z.number().optional().describe("The quantity of the product to add to the order")
+    })
+  ).describe("List of dictionaries containing the following keys")
+});
+var getOrderParameters = import_zod20.z.object({
+  order_id: import_zod20.z.string().describe("The ID of the order")
+});
+var listOrdersParameters = import_zod20.z.object({
+  fulfillment_status: import_zod20.z.enum(["shipped", "partial", "unshipped"]).optional().describe("The fulfillment status of the orders")
+});
+
+// src/shared/parameters/slack.ts
+var import_zod21 = require("zod");
+var checkConnectionParameters21 = import_zod21.z.object({});
+var startConnectionParameters21 = import_zod21.z.object({});
+var transferAgentParameters21 = import_zod21.z.object({
+  user_prompt: import_zod21.z.string().describe("The user prompt")
+});
+var listChannelsParameters = import_zod21.z.object({});
+var listMessagesParameters = import_zod21.z.object({
+  channel_id: import_zod21.z.string().describe("The ID of channel")
+});
+var listRepliesParameters = import_zod21.z.object({
+  channel_id: import_zod21.z.string().describe("The ID of channel"),
+  ts: import_zod21.z.string().describe("The timestamp of the message")
+});
+var sendMessageParameters = import_zod21.z.object({
+  channel_id: import_zod21.z.string().describe("The ID of channel"),
+  text: import_zod21.z.string().describe("The text of the message")
+});
+
+// src/shared/parameters/stripe.ts
+var import_zod22 = require("zod");
+var checkConnectionParameters22 = import_zod22.z.object({});
+var startConnectionParameters22 = import_zod22.z.object({});
+var transferAgentParameters22 = import_zod22.z.object({
+  user_prompt: import_zod22.z.string().describe("The user prompt")
+});
+var createCustomerParameters = import_zod22.z.object({
+  name: import_zod22.z.string().describe("The name of the customer"),
+  email: import_zod22.z.string().describe("The email address of the customer"),
+  phone: import_zod22.z.string().describe("The phone number of the customer"),
+  description: import_zod22.z.string().describe("The description of the customer"),
+  address1: import_zod22.z.string().describe("The first line of the address"),
+  address2: import_zod22.z.string().describe("The second line of the address"),
+  city: import_zod22.z.string().describe("The city of the address"),
+  state: import_zod22.z.string().describe("The state of the address"),
+  postal_code: import_zod22.z.string().describe("The postal code of the address"),
+  country: import_zod22.z.string().describe("The country of the address")
+});
+var createInvoiceItemParameters = import_zod22.z.object({
+  customer_id: import_zod22.z.string().describe("The ID of the customer"),
+  invoice_id: import_zod22.z.string().describe("The ID of the invoice"),
+  subscription_id: import_zod22.z.string().describe("The ID of the subscription"),
+  price_id: import_zod22.z.string().describe("The ID of the price"),
+  quantity: import_zod22.z.number().describe("The quantity of the invoice item"),
+  amount: import_zod22.z.number().describe("The amount of the invoice item"),
+  description: import_zod22.z.string().describe("The description of the invoice item"),
+  currency: import_zod22.z.string().describe("The currency of the invoice item")
+});
+var createInvoiceParameters = import_zod22.z.object({
+  customer_id: import_zod22.z.string().describe("The ID of the customer"),
+  subscription_id: import_zod22.z.string().describe("The ID of the subscription"),
+  description: import_zod22.z.string().describe("The description of the invoice"),
+  collection_method: import_zod22.z.enum(["charge_automatically", "send_invoice"]).describe("The collection method of the invoice"),
+  days_until_due: import_zod22.z.number().describe("The number of days until the invoice is due")
+});
+var deleteCustomerParameters = import_zod22.z.object({
+  customer_id: import_zod22.z.string().describe("The ID of the customer")
+});
+var getCustomerParameters = import_zod22.z.object({
+  customer_id: import_zod22.z.string().describe("The ID of the customer")
+});
+var getInvoiceParameters = import_zod22.z.object({
+  invoice_id: import_zod22.z.string().describe("The ID of the invoice")
+});
+var listCustomersParameters = import_zod22.z.object({
+  email: import_zod22.z.string().describe("The email address of the customer").optional(),
+  limit: import_zod22.z.number().describe("The number of results to return").optional()
+});
+var listInvoicesParameters = import_zod22.z.object({
+  email: import_zod22.z.string().describe("The email address of the customer").optional(),
+  limit: import_zod22.z.number().describe("The number of results to return").optional()
+});
+
+// src/shared/parameters/typeform.ts
+var import_zod23 = require("zod");
+var checkConnectionParameters23 = import_zod23.z.object({});
+var startConnectionParameters23 = import_zod23.z.object({});
+var transferAgentParameters23 = import_zod23.z.object({
+  user_prompt: import_zod23.z.string().describe("The user prompt")
+});
+var getFormParameters = import_zod23.z.object({
+  form_id: import_zod23.z.string().describe("The ID of the form")
+});
+var listFormsParameters2 = import_zod23.z.object({
+  q: import_zod23.z.string().describe("The search query").optional(),
+  page: import_zod23.z.number().describe("The page number").optional(),
+  per_page: import_zod23.z.number().describe("The number of items per page").optional()
+});
+var listResponsesParameters = import_zod23.z.object({
+  form_id: import_zod23.z.string().describe("The ID of the form"),
+  sort: import_zod23.z.string().describe(
+    "Responses order in {fieldID},{asc|desc} format. You can use built-in submitted_at/staged_at/landed_at field IDs or any field ID from your typeform, possible directions are asc/desc. Default value is submitted_at,desc for completed responses, staged_at,desc for partial responses and landed_at,desc for started responses."
+  ).optional(),
+  q: import_zod23.z.string().describe("The search query").optional(),
+  per_page: import_zod23.z.number().describe("The number of items per page").optional()
+});
+
+// src/shared/parameters/youtube.ts
+var import_zod24 = require("zod");
+var checkConnectionParameters24 = import_zod24.z.object({});
+var startConnectionParameters24 = import_zod24.z.object({});
+var transferAgentParameters24 = import_zod24.z.object({
+  user_prompt: import_zod24.z.string().describe("The user prompt")
+});
+var listVideosParameters = import_zod24.z.object({
+  part: import_zod24.z.array(
+    import_zod24.z.enum([
+      "auditDetails",
+      "brandingSettings",
+      "contentDetails",
+      "contentOwnerDetails",
+      "id",
+      "localizations",
+      "snippet",
+      "statistics",
+      "status",
+      "topicDetails"
+    ])
+  ).describe(
+    "The part parameter specifies a comma-separated list of one or more resource properties that the API response will include. Possible values are: auditDetails, brandingSettings, contentDetails, contentOwnerDetails, id, localizations, snippet, statistics, status, topicDetails"
+  ),
+  use_case: import_zod24.z.enum(["id", "myRating", "chart"]).describe(
+    "The useCase parameter specifies the type of resource to be returned. Possible values are: id, myRating, chart"
+  ),
+  video_ids: import_zod24.z.array(import_zod24.z.enum(["id", "myRating", "chart"])).optional().describe(
+    "The id parameter specifies a comma-separated list of the YouTube video ID(s) for the resource(s) that are being retrieved."
+  ),
+  my_rating: import_zod24.z.enum(["like", "dislike"]).optional().describe(
+    "The myRating parameter specifies the rating of the authenticated user. Possible values are: like, dislike"
+  ),
+  region_code: import_zod24.z.string().optional().describe(
+    "The regionCode parameter instructs the API to return results for the specified country. The parameter value is an ISO 3166-1 alpha-2 country code. For example: US, GB, BR"
+  ),
+  max_results: import_zod24.z.number().optional().describe(
+    "The maxResults parameter specifies the maximum number of items that should be returned in the result set. Default: 20."
+  )
+});
+var searchVideosParameters = import_zod24.z.object({
+  q: import_zod24.z.string().describe("The search query"),
+  max_results: import_zod24.z.number().optional().describe("The maximum number of results to return. Default: 20.")
+});
+
+// src/shared/tools.ts
+var tools = [
+  {
+    method: "airtable_check_connection",
+    name: "Airtable Check Connection",
+    description: checkConnectionPrompt,
+    parameters: checkConnectionParameters,
+    actions: {}
+  },
+  {
+    method: "airtable_start_connection",
+    name: "Airtable Start Connection",
+    description: startConnectionPrompt,
+    parameters: startConnectionParameters,
+    actions: {}
+  },
+  {
+    method: "airtable_transfer_agent",
+    name: "Airtable Transfer Agent",
+    description: transferAgentPrompt,
+    parameters: transferAgentParameters,
+    actions: {}
+  },
+  {
+    method: "airtable_list_bases",
+    name: "Airtable List Bases",
+    description: listBasesPrompt,
+    parameters: listBasesParameters,
+    actions: {}
+  },
+  {
+    method: "airtable_list_records",
+    name: "Airtable List Records",
+    description: listRecordsPrompt,
+    parameters: listRecordsParameters,
+    actions: {}
+  },
+  {
+    method: "airtable_list_tables",
+    name: "Airtable List Tables",
+    description: listTablesPrompt,
+    parameters: listTablesParameters,
+    actions: {}
+  },
+  {
+    method: "asana_check_connection",
+    name: "Asana Check Connection",
+    description: checkConnectionPrompt2,
+    parameters: checkConnectionParameters2,
+    actions: {}
+  },
+  {
+    method: "asana_start_connection",
+    name: "Asana Start Connection",
+    description: startConnectionPrompt2,
+    parameters: startConnectionParameters2,
+    actions: {}
+  },
+  {
+    method: "asana_transfer_agent",
+    name: "Asana Transfer Agent",
+    description: transferAgentPrompt2,
+    parameters: transferAgentParameters2,
+    actions: {}
+  },
+  {
+    method: "asana_create_task",
+    name: "Asana Create Task",
+    description: createTaskPrompt,
+    parameters: createTaskParameters,
+    actions: {}
+  },
+  {
+    method: "asana_get_task",
+    name: "Asana Get Task",
+    description: getTaskPrompt,
+    parameters: getTaskParameters,
+    actions: {}
+  },
+  {
+    method: "asana_list_projects",
+    name: "Asana List Projects",
+    description: listProjectsPrompt,
+    parameters: listProjectsParameters,
+    actions: {}
+  },
+  {
+    method: "asana_list_tasks",
+    name: "Asana List Tasks",
+    description: listTasksPrompt,
+    parameters: listTasksParameters,
+    actions: {}
+  },
+  {
+    method: "asana_list_workspaces",
+    name: "Asana List Workspaces",
+    description: listWorkspacesPrompt,
+    parameters: listWorkspacesParameters,
+    actions: {}
+  },
+  {
+    method: "aws_check_connection",
+    name: "AWS Check Connection",
+    description: checkConnectionPrompt3,
+    parameters: checkConnectionParameters3,
+    actions: {}
+  },
+  {
+    method: "aws_start_connection",
+    name: "AWS Start Connection",
+    description: startConnectionPrompt3,
+    parameters: startConnectionParameters3,
+    actions: {}
+  },
+  {
+    method: "aws_transfer_agent",
+    name: "AWS Transfer Agent",
+    description: transferAgentPrompt3,
+    parameters: transferAgentParameters3,
+    actions: {}
+  },
+  {
+    method: "aws_get_s3_object",
+    name: "AWS Get S3 Object",
+    description: getS3ObjectPrompt,
+    parameters: getS3ObjectParameters,
+    actions: {}
+  },
+  {
+    method: "aws_list_s3_buckets",
+    name: "AWS List S3 Buckets",
+    description: listS3BucketsPrompt,
+    parameters: listS3BucketsParameters,
+    actions: {}
+  },
+  {
+    method: "aws_list_s3_objects",
+    name: "AWS List S3 Objects",
+    description: listS3ObjectsPrompt,
+    parameters: listS3ObjectsParameters,
+    actions: {}
+  },
+  {
+    method: "calendly_check_connection",
+    name: "Calendly Check Connection",
+    description: checkConnectionPrompt4,
+    parameters: checkConnectionParameters4,
+    actions: {}
+  },
+  {
+    method: "calendly_start_connection",
+    name: "Calendly Start Connection",
+    description: startConnectionPrompt4,
+    parameters: startConnectionParameters4,
+    actions: {}
+  },
+  {
+    method: "calendly_transfer_agent",
+    name: "Calendly Transfer Agent",
+    description: transferAgentPrompt4,
+    parameters: transferAgentParameters4,
+    actions: {}
+  },
+  {
+    method: "calendly_get_event",
+    name: "Calendly Get Event",
+    description: getEventPrompt,
+    parameters: getEventParameters,
+    actions: {}
+  },
+  {
+    method: "calendly_list_event_invitees",
+    name: "Calendly List Event Invitees",
+    description: listEventInviteesPrompt,
+    parameters: listEventInviteesParameters,
+    actions: {}
+  },
+  {
+    method: "calendly_list_event_types",
+    name: "Calendly List Event Types",
+    description: listEventTypesPrompt,
+    parameters: listEventTypesParameters,
+    actions: {}
+  },
+  {
+    method: "calendly_list_events",
+    name: "Calendly List Events",
+    description: listEventsPrompt,
+    parameters: listEventsParameters,
+    actions: {}
+  },
+  {
+    method: "clickup_check_connection",
+    name: "ClickUp Check Connection",
+    description: checkConnectionPrompt5,
+    parameters: checkConnectionParameters5,
+    actions: {}
+  },
+  {
+    method: "clickup_start_connection",
+    name: "ClickUp Start Connection",
+    description: startConnectionPrompt5,
+    parameters: startConnectionParameters5,
+    actions: {}
+  },
+  {
+    method: "clickup_transfer_agent",
+    name: "ClickUp Transfer Agent",
+    description: transferAgentPrompt5,
+    parameters: transferAgentParameters5,
+    actions: {}
+  },
+  {
+    method: "clickup_create_task",
+    name: "ClickUp Create Task",
+    description: createTaskPrompt2,
+    parameters: createTaskParameters2,
+    actions: {}
+  },
+  {
+    method: "clickup_delete_task",
+    name: "ClickUp Delete Task",
+    description: deleteTaskPrompt,
+    parameters: deleteTaskParameters,
+    actions: {}
+  },
+  {
+    method: "clickup_get_task",
+    name: "ClickUp Get Task",
+    description: getTaskPrompt2,
+    parameters: getTaskParameters2,
+    actions: {}
+  },
+  {
+    method: "clickup_list_folders",
+    name: "ClickUp List Folders",
+    description: listFoldersPrompt,
+    parameters: listFoldersParameters,
+    actions: {}
+  },
+  {
+    method: "clickup_list_lists",
+    name: "ClickUp List Lists",
+    description: listListsPrompt,
+    parameters: listListsParameters,
+    actions: {}
+  },
+  {
+    method: "clickup_list_spaces",
+    name: "ClickUp List Spaces",
+    description: listSpacesPrompt,
+    parameters: listSpacesParameters,
+    actions: {}
+  },
+  {
+    method: "clickup_list_tasks",
+    name: "ClickUp List Tasks",
+    description: listTasksPrompt2,
+    parameters: listTasksParameters2,
+    actions: {}
+  },
+  {
+    method: "clickup_list_workspaces",
+    name: "ClickUp List Workspaces",
+    description: listWorkspacesPrompt2,
+    parameters: listWorkspacesParameters2,
+    actions: {}
+  },
+  {
+    method: "google-calendar_check_connection",
+    name: "Google Calendar Check Connection",
+    description: checkConnectionPrompt6,
+    parameters: checkConnectionParameters6,
+    actions: {}
+  },
+  {
+    method: "google-calendar_start_connection",
+    name: "Google Calendar Start Connection",
+    description: startConnectionPrompt6,
+    parameters: startConnectionParameters6,
+    actions: {}
+  },
+  {
+    method: "google-calendar_transfer_agent",
+    name: "Google Calendar Transfer Agent",
+    description: transferAgentPrompt6,
+    parameters: transferAgentParameters6,
+    actions: {}
+  },
+  {
+    method: "google-calendar_create_event",
+    name: "Google Calendar Create Event",
+    description: createEventPrompt,
+    parameters: createEventParameters,
+    actions: {}
+  },
+  {
+    method: "google-calendar_delete_event",
+    name: "Google Calendar Delete Event",
+    description: deleteEventPrompt,
+    parameters: deleteEventParameters,
+    actions: {}
+  },
+  {
+    method: "google-calendar_get_calendar",
+    name: "Google Calendar Get Calendar",
+    description: getCalendarPrompt,
+    parameters: getCalendarParameters,
+    actions: {}
+  },
+  {
+    method: "google-calendar_get_event",
+    name: "Google Calendar Get Event",
+    description: getEventPrompt2,
+    parameters: getEventParameters2,
+    actions: {}
+  },
+  {
+    method: "google-calendar_list_calendars",
+    name: "Google Calendar List Calendars",
+    description: listCalendarsPrompt,
+    parameters: listCalendarsParameters,
+    actions: {}
+  },
+  {
+    method: "google-calendar_list_events",
+    name: "Google Calendar List Events",
+    description: listEventsPrompt2,
+    parameters: listEventsParameters2,
+    actions: {}
+  },
+  {
+    method: "google-calendar_update_event",
+    name: "Google Calendar Update Event",
+    description: updateEventPrompt,
+    parameters: updateEventParameters,
+    actions: {}
+  },
+  {
+    method: "google-docs_check_connection",
+    name: "Google Docs Check Connection",
+    description: checkConnectionPrompt7,
+    parameters: checkConnectionParameters7,
+    actions: {}
+  },
+  {
+    method: "google-docs_start_connection",
+    name: "Google Docs Start Connection",
+    description: startConnectionPrompt7,
+    parameters: startConnectionParameters7,
+    actions: {}
+  },
+  {
+    method: "google-docs_transfer_agent",
+    name: "Google Docs Transfer Agent",
+    description: transferAgentPrompt7,
+    parameters: transferAgentParameters7,
+    actions: {}
+  },
+  {
+    method: "google-docs_append_text",
+    name: "Google Docs Append Text",
+    description: appendTextPrompt,
+    parameters: appendTextParameters,
+    actions: {}
+  },
+  {
+    method: "google-docs_create_document",
+    name: "Google Docs Create Document",
+    description: createDocumentPrompt,
+    parameters: createDocumentParameters,
+    actions: {}
+  },
+  {
+    method: "google-docs_find_document",
+    name: "Google Docs Find Document",
+    description: findDocumentPrompt,
+    parameters: findDocumentParameters,
+    actions: {}
+  },
+  {
+    method: "google-docs_get_document",
+    name: "Google Docs Get Document",
+    description: getDocumentPrompt,
+    parameters: getDocumentParameters,
+    actions: {}
+  },
+  {
+    method: "google-drive_check_connection",
+    name: "Google Drive Check Connection",
+    description: checkConnectionPrompt8,
+    parameters: checkConnectionParameters8,
+    actions: {}
+  },
+  {
+    method: "google-drive_start_connection",
+    name: "Google Drive Start Connection",
+    description: startConnectionPrompt8,
+    parameters: startConnectionParameters8,
+    actions: {}
+  },
+  {
+    method: "google-drive_transfer_agent",
+    name: "Google Drive Transfer Agent",
+    description: transferAgentPrompt8,
+    parameters: transferAgentParameters8,
+    actions: {}
+  },
+  {
+    method: "google-drive_create_file",
+    name: "Google Drive Create File",
+    description: createFilePrompt,
+    parameters: createFileParameters,
+    actions: {}
+  },
+  {
+    method: "google-drive_create_folder",
+    name: "Google Drive Create Folder",
+    description: createFolderPrompt,
+    parameters: createFolderParameters,
+    actions: {}
+  },
+  {
+    method: "google-drive_delete_file",
+    name: "Google Drive Delete File",
+    description: deleteFilePrompt,
+    parameters: deleteFileParameters,
+    actions: {}
+  },
+  {
+    method: "google-drive_find_file",
+    name: "Google Drive Find File",
+    description: findFilePrompt,
+    parameters: findFileParameters,
+    actions: {}
+  },
+  {
+    method: "google-drive_find_folder",
+    name: "Google Drive Find Folder",
+    description: findFolderPrompt,
+    parameters: findFolderParameters,
+    actions: {}
+  },
+  {
+    method: "google-drive_get_file",
+    name: "Google Drive Get File",
+    description: getFilePrompt,
+    parameters: getFileParameters,
+    actions: {}
+  },
+  {
+    method: "google-drive_list_files",
+    name: "Google Drive List Files",
+    description: listFilesPrompt,
+    parameters: listFilesParameters,
+    actions: {}
+  },
+  {
+    method: "google-mail_check_connection",
+    name: "Gmail Check Connection",
+    description: checkConnectionPrompt9,
+    parameters: checkConnectionParameters9,
+    actions: {}
+  },
+  {
+    method: "google-mail_start_connection",
+    name: "Gmail Start Connection",
+    description: startConnectionPrompt9,
+    parameters: startConnectionParameters9,
+    actions: {}
+  },
+  {
+    method: "google-mail_transfer_agent",
+    name: "Gmail Transfer Agent",
+    description: transferAgentPrompt9,
+    parameters: transferAgentParameters9,
+    actions: {}
+  },
+  {
+    method: "google-mail_add_label_to_email",
+    name: "Gmail Add Label to Email",
+    description: addLabelToEmailPrompt,
+    parameters: addLabelToEmailParameters,
+    actions: {}
+  },
+  {
+    method: "google-mail_create_draft",
+    name: "Gmail Create Draft",
+    description: createDraftPrompt,
+    parameters: createDraftParameters,
+    actions: {}
+  },
+  {
+    method: "google-mail_find_email",
+    name: "Gmail Find Email",
+    description: findEmailPrompt,
+    parameters: findEmailParameters,
+    actions: {}
+  },
+  {
+    method: "google-mail_list_labels",
+    name: "Gmail List Labels",
+    description: listLabelsPrompt,
+    parameters: listLabelsParameters,
+    actions: {}
+  },
+  {
+    method: "google-mail_send_email",
+    name: "Gmail Send Email",
+    description: sendEmailPrompt,
+    parameters: sendEmailParameters,
+    actions: {}
+  },
+  {
+    method: "google-mail_remove_label_from_email",
+    name: "Gmail Remove Label From Email",
+    description: removeLabelFromEmailPrompt,
+    parameters: removeLabelFromEmailParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_check_connection",
+    name: "Google Sheets Check Connection",
+    description: checkConnectionPrompt10,
+    parameters: checkConnectionParameters10,
+    actions: {}
+  },
+  {
+    method: "google-sheet_start_connection",
+    name: "Google Sheets Start Connection",
+    description: startConnectionPrompt10,
+    parameters: startConnectionParameters10,
+    actions: {}
+  },
+  {
+    method: "google-sheet_transfer_agent",
+    name: "Google Sheets Transfer Agent",
+    description: transferAgentPrompt10,
+    parameters: transferAgentParameters10,
+    actions: {}
+  },
+  {
+    method: "google-sheet_add_column",
+    name: "Google Sheets Add Column",
+    description: addColumnPrompt,
+    parameters: addColumnParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_add_multiple_rows",
+    name: "Google Sheets Add Multiple Rows",
+    description: addMultipleRowsPrompt,
+    parameters: addMultipleRowsParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_clear_cell",
+    name: "Google Sheets Clear Cell",
+    description: clearCellPrompt,
+    parameters: clearCellParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_clear_rows",
+    name: "Google Sheets Clear Rows",
+    description: clearRowsPrompt,
+    parameters: clearRowsParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_create_spreadsheet",
+    name: "Google Sheets Create Spreadsheet",
+    description: createSpreadsheetPrompt,
+    parameters: createSpreadsheetParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_create_worksheet",
+    name: "Google Sheets Create Worksheet",
+    description: createWorksheetPrompt,
+    parameters: createWorksheetParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_delete_rows",
+    name: "Google Sheets Delete Rows",
+    description: deleteRowsPrompt,
+    parameters: deleteRowsParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_delete_worksheet",
+    name: "Google Sheets Delete Worksheet",
+    description: deleteWorksheetPrompt,
+    parameters: deleteWorksheetParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_find_row",
+    name: "Google Sheets Find Row",
+    description: findRowPrompt,
+    parameters: findRowParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_get_cell",
+    name: "Google Sheets Get Cell",
+    description: getCellPrompt,
+    parameters: getCellParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_get_spreadsheet",
+    name: "Google Sheets Get Spreadsheet",
+    description: getSpreadsheetPrompt,
+    parameters: getSpreadsheetParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_get_values_in_range",
+    name: "Google Sheets Get Values in Range",
+    description: getValuesInRangePrompt,
+    parameters: getValuesInRangeParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_list_worksheets",
+    name: "Google Sheets List Worksheets",
+    description: listWorksheetsPrompt,
+    parameters: listWorksheetsParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_update_cell",
+    name: "Google Sheets Update Cell",
+    description: updateCellPrompt,
+    parameters: updateCellParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_update_multiple_rows",
+    name: "Google Sheets Update Multiple Rows",
+    description: updateMultipleRowsPrompt,
+    parameters: updateMultipleRowsParameters,
+    actions: {}
+  },
+  {
+    method: "google-sheet_update_row",
+    name: "Google Sheets Update Row",
+    description: updateRowPrompt,
+    parameters: updateRowParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_check_connection",
+    name: "HubSpot Check Connection",
+    description: checkConnectionPrompt11,
+    parameters: checkConnectionParameters11,
+    actions: {}
+  },
+  {
+    method: "hubspot_start_connection",
+    name: "HubSpot Start Connection",
+    description: startConnectionPrompt11,
+    parameters: startConnectionParameters11,
+    actions: {}
+  },
+  {
+    method: "hubspot_transfer_agent",
+    name: "HubSpot Transfer Agent",
+    description: transferAgentPrompt11,
+    parameters: transferAgentParameters11,
+    actions: {}
+  },
+  {
+    method: "hubspot_create_contact",
+    name: "HubSpot Create Contact",
+    description: createContactPrompt,
+    parameters: createContactParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_get_contact",
+    name: "HubSpot Get Contact",
+    description: getContactPrompt,
+    parameters: getContactParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_list_contacts",
+    name: "HubSpot List Contacts",
+    description: listContactsPrompt,
+    parameters: listContactsParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_search_contacts",
+    name: "HubSpot Search Contacts",
+    description: searchContactsPrompt,
+    parameters: searchContactsParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_merge_contacts",
+    name: "HubSpot Merge Contacts",
+    description: mergeContactsPrompt,
+    parameters: mergeContactsParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_update_contact",
+    name: "HubSpot Update Contact",
+    description: updateContactPrompt,
+    parameters: updateContactParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_delete_contact",
+    name: "HubSpot Delete Contact",
+    description: deleteContactPrompt,
+    parameters: deleteContactParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_create_deal",
+    name: "HubSpot Create Deal",
+    description: createDealPrompt,
+    parameters: createDealParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_get_deal",
+    name: "HubSpot Get Deal",
+    description: getDealPrompt,
+    parameters: getDealParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_list_deals",
+    name: "HubSpot List Deals",
+    description: listDealsPrompt,
+    parameters: listDealsParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_search_deals",
+    name: "HubSpot Search Deals",
+    description: searchDealsPrompt,
+    parameters: searchDealsParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_merge_deals",
+    name: "HubSpot Merge Deals",
+    description: mergeDealPrompt,
+    parameters: mergeDealParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_update_deal",
+    name: "HubSpot Update Deal",
+    description: updateDealPrompt,
+    parameters: updateDealParameters,
+    actions: {}
+  },
+  {
+    method: "hubspot_delete_deal",
+    name: "HubSpot Delete Deal",
+    description: deleteDealPrompt,
+    parameters: deleteDealParameters,
+    actions: {}
+  },
+  {
+    method: "salesforce_check_connection",
+    name: "Salesforce Check Connection",
+    description: checkConnectionPrompt19,
+    parameters: checkConnectionParameters19,
+    actions: {}
+  },
+  {
+    method: "salesforce_start_connection",
+    name: "Salesforce Start Connection",
+    description: startConnectionPrompt19,
+    parameters: startConnectionParameters19,
+    actions: {}
+  },
+  {
+    method: "salesforce_transfer_agent",
+    name: "Salesforce Transfer Agent",
+    description: transferAgentPrompt19,
+    parameters: transferAgentParameters19,
+    actions: {}
+  },
+  {
+    method: "salesforce_create_contact",
+    name: "Salesforce Create Contact",
+    description: createContactPrompt2,
+    parameters: createContactParameters2,
+    actions: {}
+  },
+  {
+    method: "salesforce_get_contact",
+    name: "Salesforce Get Contact",
+    description: getContactPrompt2,
+    parameters: getContactParameters2,
+    actions: {}
+  },
+  {
+    method: "salesforce_list_contacts",
+    name: "Salesforce List Contacts",
+    description: listContactsPrompt2,
+    parameters: listContactsParameters2,
+    actions: {}
+  },
+  {
+    method: "klaviyo_check_connection",
+    name: "Klaviyo Check Connection",
+    description: checkConnectionPrompt14,
+    parameters: checkConnectionParameters14,
+    actions: {}
+  },
+  {
+    method: "klaviyo_start_connection",
+    name: "Klaviyo Start Connection",
+    description: startConnectionPrompt14,
+    parameters: startConnectionParameters14,
+    actions: {}
+  },
+  {
+    method: "klaviyo_transfer_agent",
+    name: "Klaviyo Transfer Agent",
+    description: transferAgentPrompt14,
+    parameters: transferAgentParameters14,
+    actions: {}
+  },
+  {
+    method: "klaviyo_add_profiles_to_list",
+    name: "Klaviyo Add Profiles to List",
+    description: addProfilesToListPrompt,
+    parameters: addProfilesToListParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_assign_template_to_campaign_message",
+    name: "Klaviyo Assign Template to Campaign Message",
+    description: assignTemplateToCampaignMessagePrompt,
+    parameters: assignTemplateToCampaignMessageParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_create_campaign",
+    name: "Klaviyo Create Campaign",
+    description: createCampaignPrompt,
+    parameters: createCampaignParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_create_list",
+    name: "Klaviyo Create List",
+    description: createListPrompt,
+    parameters: createListParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_create_profile",
+    name: "Klaviyo Create Profile",
+    description: createProfilePrompt,
+    parameters: createProfileParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_create_template",
+    name: "Klaviyo Create Template",
+    description: createTemplatePrompt,
+    parameters: createTemplateParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_get_campaign_messages",
+    name: "Klaviyo Get Campaign Messages",
+    description: getCampaignMessagesPrompt,
+    parameters: getCampaignMessagesParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_get_campaign_send_job",
+    name: "Klaviyo Get Campaign Send Job",
+    description: getCampaignSendJobPrompt,
+    parameters: getCampaignSendJobParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_get_campaigns",
+    name: "Klaviyo Get Campaigns",
+    description: getCampaignsPrompt,
+    parameters: getCampaignsParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_get_lists",
+    name: "Klaviyo Get Lists",
+    description: getListsPrompt,
+    parameters: getListsParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_get_profiles_for_list",
+    name: "Klaviyo Get Profiles for List",
+    description: getProfilesForListPrompt,
+    parameters: getProfilesForListParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_get_profiles",
+    name: "Klaviyo Get Profiles",
+    description: getProfilesPrompt,
+    parameters: getProfilesParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_get_templates",
+    name: "Klaviyo Get Templates",
+    description: getTemplatesPrompt,
+    parameters: getTemplatesParameters,
+    actions: {}
+  },
+  {
+    method: "klaviyo_send_campaign",
+    name: "Klaviyo Send Campaign",
+    description: sendCampaignPrompt,
+    parameters: sendCampaignParameters,
+    actions: {}
+  },
+  {
+    method: "jira_check_connection",
+    name: "Jira Check Connection",
+    description: checkConnectionPrompt12,
+    parameters: checkConnectionParameters12,
+    actions: {}
+  },
+  {
+    method: "jira_start_connection",
+    name: "Jira Start Connection",
+    description: startConnectionPrompt12,
+    parameters: startConnectionParameters12,
+    actions: {}
+  },
+  {
+    method: "jira_transfer_agent",
+    name: "Jira Transfer Agent",
+    description: transferAgentPrompt12,
+    parameters: transferAgentParameters12,
+    actions: {}
+  },
+  {
+    method: "jira_list_clouds",
+    name: "Jira List Clouds",
+    description: listCloudsPrompt,
+    parameters: listCloudsParameters,
+    actions: {}
+  },
+  {
+    method: "jira_get_issue",
+    name: "Jira Get Issue",
+    description: getIssuePrompt,
+    parameters: getIssueParameters,
+    actions: {}
+  },
+  {
+    method: "jira_list_issues",
+    name: "Jira List Issues",
+    description: listIssuesPrompt,
+    parameters: listIssuesParameters,
+    actions: {}
+  },
+  {
+    method: "jira_add_comment_to_issue",
+    name: "Jira Add Comment to Issue",
+    description: addCommentToIssuePrompt,
+    parameters: addCommentToIssueParameters,
+    actions: {}
+  },
+  {
+    method: "jira_list_comments",
+    name: "Jira List Comments",
+    description: listCommentsPrompt,
+    parameters: listCommentsParameters,
+    actions: {}
+  },
+  {
+    method: "jira_update_comment",
+    name: "Jira Update Comment",
+    description: updateCommentPrompt,
+    parameters: updateCommentParameters,
+    actions: {}
+  },
+  {
+    method: "jira_list_projects",
+    name: "Jira List Projects",
+    description: listProjectsPrompt2,
+    parameters: listProjectsParameters2,
+    actions: {}
+  },
+  {
+    method: "jira_get_user",
+    name: "Jira Get User",
+    description: getUserPrompt,
+    parameters: getUserParameters,
+    actions: {}
+  },
+  {
+    method: "jira_list_users",
+    name: "Jira List Users",
+    description: listUsersPrompt,
+    parameters: listUsersParameters,
+    actions: {}
+  },
+  {
+    method: "jotform_check_connection",
+    name: "Jotform Check Connection",
+    description: checkConnectionPrompt13,
+    parameters: checkConnectionParameters13,
+    actions: {}
+  },
+  {
+    method: "jotform_start_connection",
+    name: "Jotform Start Connection",
+    description: startConnectionPrompt13,
+    parameters: startConnectionParameters13,
+    actions: {}
+  },
+  {
+    method: "jotform_transfer_agent",
+    name: "Jotform Transfer Agent",
+    description: transferAgentPrompt13,
+    parameters: transferAgentParameters13,
+    actions: {}
+  },
+  {
+    method: "jotform_list_forms",
+    name: "Jotform List Forms",
+    description: listFormsPrompt,
+    parameters: listFormsParameters,
+    actions: {}
+  },
+  {
+    method: "jotform_list_submissions",
+    name: "Jotform List Submissions",
+    description: listSubmissionsPrompt,
+    parameters: listSubmissionsParameters,
+    actions: {}
+  },
+  {
+    method: "mailchimp_check_connection",
+    name: "Mailchimp Check Connection",
+    description: checkConnectionPrompt15,
+    parameters: checkConnectionParameters15,
+    actions: {}
+  },
+  {
+    method: "mailchimp_start_connection",
+    name: "Mailchimp Start Connection",
+    description: startConnectionPrompt15,
+    parameters: startConnectionParameters15,
+    actions: {}
+  },
+  {
+    method: "mailchimp_transfer_agent",
+    name: "Mailchimp Transfer Agent",
+    description: transferAgentPrompt15,
+    parameters: transferAgentParameters15,
+    actions: {}
+  },
+  {
+    method: "mailchimp_get_campaign",
+    name: "Mailchimp Get Campaign",
+    description: getCampaignPrompt,
+    parameters: getCampaignParameters,
+    actions: {}
+  },
+  {
+    method: "mailchimp_search_campaign",
+    name: "Mailchimp Search Campaign",
+    description: searchCampaignPrompt,
+    parameters: searchCampaignsParameters,
+    actions: {}
+  },
+  {
+    method: "notion_check_connection",
+    name: "Notion Check Connection",
+    description: checkConnectionPrompt16,
+    parameters: checkConnectionParameters16,
+    actions: {}
+  },
+  {
+    method: "notion_start_connection",
+    name: "Notion Start Connection",
+    description: startConnectionPrompt16,
+    parameters: startConnectionParameters16,
+    actions: {}
+  },
+  {
+    method: "notion_transfer_agent",
+    name: "Notion Transfer Agent",
+    description: transferAgentPrompt16,
+    parameters: transferAgentParameters16,
+    actions: {}
+  },
+  {
+    method: "notion_create_page",
+    name: "Notion Create Page",
+    description: createPagePrompt,
+    parameters: createPageParameters,
+    actions: {}
+  },
+  {
+    method: "notion_find_page",
+    name: "Notion Find Page",
+    description: findPagePrompt,
+    parameters: findPageParameters,
+    actions: {}
+  },
+  {
+    method: "notion_get_page",
+    name: "Notion Get Page",
+    description: getPagePrompt,
+    parameters: getPageParameters,
+    actions: {}
+  },
+  {
+    method: "outlook_check_connection",
+    name: "Outlook Check Connection",
+    description: checkConnectionPrompt17,
+    parameters: checkConnectionParameters17,
+    actions: {}
+  },
+  {
+    method: "outlook_start_connection",
+    name: "Outlook Start Connection",
+    description: startConnectionPrompt17,
+    parameters: startConnectionParameters17,
+    actions: {}
+  },
+  {
+    method: "outlook_transfer_agent",
+    name: "Outlook Transfer Agent",
+    description: transferAgentPrompt17,
+    parameters: transferAgentParameters17,
+    actions: {}
+  },
+  {
+    method: "outlook_create_draft",
+    name: "Outlook Create Draft",
+    description: createDraftPrompt2,
+    parameters: createDraftParameters2,
+    actions: {}
+  },
+  {
+    method: "outlook_find_email",
+    name: "Outlook Find Email",
+    description: findEmailPrompt2,
+    parameters: findEmailParameters2,
+    actions: {}
+  },
+  {
+    method: "outlook_send_email",
+    name: "Outlook Send Email",
+    description: sendEmailPrompt2,
+    parameters: sendEmailParameters2,
+    actions: {}
+  },
+  {
+    method: "pipedrive_check_connection",
+    name: "Pipedrive Check Connection",
+    description: checkConnectionPrompt18,
+    parameters: checkConnectionParameters18,
+    actions: {}
+  },
+  {
+    method: "pipedrive_start_connection",
+    name: "Pipedrive Start Connection",
+    description: startConnectionPrompt18,
+    parameters: startConnectionParameters18,
+    actions: {}
+  },
+  {
+    method: "pipedrive_transfer_agent",
+    name: "Pipedrive Transfer Agent",
+    description: transferAgentPrompt18,
+    parameters: transferAgentParameters18,
+    actions: {}
+  },
+  {
+    method: "pipedrive_search_people",
+    name: "Pipedrive Search People",
+    description: searchPeoplePrompt,
+    parameters: searchPeopleParameters,
+    actions: {}
+  },
+  {
+    method: "shopify_check_connection",
+    name: "Shopify Check Connection",
+    description: checkConnectionPrompt20,
+    parameters: checkConnectionParameters20,
+    actions: {}
+  },
+  {
+    method: "shopify_start_connection",
+    name: "Shopify Start Connection",
+    description: startConnectionPrompt20,
+    parameters: startConnectionParameters20,
+    actions: {}
+  },
+  {
+    method: "shopify_transfer_agent",
+    name: "Shopify Transfer Agent",
+    description: transferAgentPrompt20,
+    parameters: transferAgentParameters20,
+    actions: {}
+  },
+  {
+    method: "shopify_create_order",
+    name: "Shopify Create Order",
+    description: createOrderPrompt,
+    parameters: createOrderParameters,
+    actions: {}
+  },
+  {
+    method: "shopify_get_order",
+    name: "Shopify Get Order",
+    description: getOrderPrompt,
+    parameters: getOrderParameters,
+    actions: {}
+  },
+  {
+    method: "shopify_list_orders",
+    name: "Shopify List Orders",
+    description: listOrdersPrompt,
+    parameters: listOrdersParameters,
+    actions: {}
+  },
+  {
+    method: "slack_check_connection",
+    name: "Slack Check Connection",
+    description: checkConnectionPrompt21,
+    parameters: checkConnectionParameters21,
+    actions: {}
+  },
+  {
+    method: "slack_start_connection",
+    name: "Slack Start Connection",
+    description: startConnectionPrompt21,
+    parameters: startConnectionParameters21,
+    actions: {}
+  },
+  {
+    method: "slack_transfer_agent",
+    name: "Slack Transfer Agent",
+    description: transferAgentPrompt21,
+    parameters: transferAgentParameters21,
+    actions: {}
+  },
+  {
+    method: "slack_list_channels",
+    name: "Slack List Channels",
+    description: listChannelsPrompt,
+    parameters: listChannelsParameters,
+    actions: {}
+  },
+  {
+    method: "slack_list_messages",
+    name: "Slack List Messages",
+    description: listMessagesPrompt,
+    parameters: listMessagesParameters,
+    actions: {}
+  },
+  {
+    method: "slack_list_replies",
+    name: "Slack List Replies",
+    description: listRepliesPrompt,
+    parameters: listRepliesParameters,
+    actions: {}
+  },
+  {
+    method: "slack_send_message",
+    name: "Slack Send Message",
+    description: sendMessagePrompt,
+    parameters: sendMessageParameters,
+    actions: {}
+  },
+  {
+    method: "stripe_check_connection",
+    name: "Stripe Check Connection",
+    description: checkConnectionPrompt22,
+    parameters: checkConnectionParameters22,
+    actions: {}
+  },
+  {
+    method: "stripe_start_connection",
+    name: "Stripe Start Connection",
+    description: startConnectionPrompt22,
+    parameters: startConnectionParameters22,
+    actions: {}
+  },
+  {
+    method: "stripe_transfer_agent",
+    name: "Stripe Transfer Agent",
+    description: transferAgentPrompt22,
+    parameters: transferAgentParameters22,
+    actions: {}
+  },
+  {
+    method: "stripe_create_customer",
+    name: "Stripe Create Customer",
+    description: createCustomerPrompt,
+    parameters: createCustomerParameters,
+    actions: {}
+  },
+  {
+    method: "stripe_create_invoice_item",
+    name: "Stripe Create Invoice Item",
+    description: createInvoiceItemPrompt,
+    parameters: createInvoiceItemParameters,
+    actions: {}
+  },
+  {
+    method: "stripe_create_invoice",
+    name: "Stripe Create Invoice",
+    description: createInvoicePrompt,
+    parameters: createInvoiceParameters,
+    actions: {}
+  },
+  {
+    method: "stripe_delete_customer",
+    name: "Stripe Delete Customer",
+    description: deleteCustomerPrompt,
+    parameters: deleteCustomerParameters,
+    actions: {}
+  },
+  {
+    method: "stripe_get_customer",
+    name: "Stripe Get Customer",
+    description: getCustomerPrompt,
+    parameters: getCustomerParameters,
+    actions: {}
+  },
+  {
+    method: "stripe_get_invoice",
+    name: "Stripe Get Invoice",
+    description: getInvoicePrompt,
+    parameters: getInvoiceParameters,
+    actions: {}
+  },
+  {
+    method: "stripe_list_customers",
+    name: "Stripe List Customers",
+    description: listCustomersPrompt,
+    parameters: listCustomersParameters,
+    actions: {}
+  },
+  {
+    method: "stripe_list_invoices",
+    name: "Stripe List Invoices",
+    description: listInvoicesPrompt,
+    parameters: listInvoicesParameters,
+    actions: {}
+  },
+  {
+    method: "typeform_check_connection",
+    name: "Typeform Check Connection",
+    description: checkConnectionPrompt23,
+    parameters: checkConnectionParameters23,
+    actions: {}
+  },
+  {
+    method: "typeform_start_connection",
+    name: "Typeform Start Connection",
+    description: startConnectionPrompt23,
+    parameters: startConnectionParameters23,
+    actions: {}
+  },
+  {
+    method: "typeform_transfer_agent",
+    name: "Typeform Transfer Agent",
+    description: transferAgentPrompt23,
+    parameters: transferAgentParameters23,
+    actions: {}
+  },
+  {
+    method: "typeform_get_form",
+    name: "Typeform Get Form",
+    description: getFormPrompt,
+    parameters: getFormParameters,
+    actions: {}
+  },
+  {
+    method: "typeform_list_forms",
+    name: "Typeform List Forms",
+    description: listFormsPrompt2,
+    parameters: listFormsParameters2,
+    actions: {}
+  },
+  {
+    method: "typeform_list_responses",
+    name: "Typeform List Responses",
+    description: listResponsesPrompt,
+    parameters: listResponsesParameters,
+    actions: {}
+  },
+  {
+    method: "youtube_check_connection",
+    name: "YouTube Check Connection",
+    description: checkConnectionPrompt24,
+    parameters: checkConnectionParameters24,
+    actions: {}
+  },
+  {
+    method: "youtube_start_connection",
+    name: "YouTube Start Connection",
+    description: startConnectionPrompt24,
+    parameters: startConnectionParameters24,
+    actions: {}
+  },
+  {
+    method: "youtube_transfer_agent",
+    name: "YouTube Transfer Agent",
+    description: transferAgentPrompt24,
+    parameters: transferAgentParameters24,
+    actions: {}
+  },
+  {
+    method: "youtube_list_videos",
+    name: "YouTube List Videos",
+    description: listVideosPrompt,
+    parameters: listVideosParameters,
+    actions: {}
+  },
+  {
+    method: "youtube_search_videos",
+    name: "YouTube Search Videos",
+    description: searchVideosPrompt,
+    parameters: searchVideosParameters,
+    actions: {}
+  }
+];
+var tools_default = tools;
+
+// src/modelcontextprotocol/toolkit.ts
+var MatonAgentToolkit = class extends import_mcp.McpServer {
+  _maton;
+  constructor(configuration) {
+    super({
+      name: "Maton",
+      version: "0.0.1"
+    });
+    this._maton = new api_default(configuration.apiKey);
+    checkConfiguration(configuration);
+    const filteredTools = tools_default.filter(
+      (tool) => isToolAllowed(tool, configuration)
+    );
+    filteredTools.forEach((tool) => {
+      this.tool(
+        tool.method,
+        tool.description,
+        tool.parameters.shape,
+        async (arg, _extra) => {
+          const result = await this._maton.run(tool.method, arg);
+          return {
+            content: [
+              {
+                type: "text",
+                text: String(result)
+              }
+            ]
+          };
+        }
+      );
+    });
+  }
+};
+var toolkit_default = MatonAgentToolkit;
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  MatonAgentToolkit
+});
+//# sourceMappingURL=index.js.map

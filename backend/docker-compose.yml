@@ -1,0 +1,78 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: ocin-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://ocin:ocinpass@db:5432/ocin
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - ADMIN_SECRET=${ADMIN_SECRET:-change-me-in-production}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-change-me-in-production}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
+      - XAI_API_KEY=${XAI_API_KEY:-}
+      - QWEN_API_KEY=${QWEN_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - ZAI_API_KEY=${ZAI_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ocin-network
+    restart: unless-stopped
+    volumes:
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./tests:/app/tests
+      - /var/run/docker.sock:/var/run/docker.sock
+      
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: ocin-db
+    environment:
+      - POSTGRES_USER=ocin
+      - POSTGRES_PASSWORD=ocinpass
+      - POSTGRES_DB=ocin
+    volumes:
+      - ocin-db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ocin -d ocin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ocin-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ocin-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ocin-network
+    restart: unless-stopped
+
+volumes:
+  ocin-db-data:
+
+networks:
+  ocin-network:
+    driver: bridge

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest --version)",
+      "Bash(pip install:*)",
+      "Bash(pytest tests/ -v)",
+      "Bash(python -m pytest tests/ -v)",
+      "Bash(python -m pytest tests/ -v --tb=short)",
+      "Bash(python -m pytest tests/test_approval_model.py -v --tb=short)",
+      "Bash(python -m pytest tests/test_approval_model.py::TestApprovalModel::test_create_approval_with_minimal_fields -v)"
+    ]
+  }
+}

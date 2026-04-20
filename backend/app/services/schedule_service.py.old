@@ -1,0 +1,372 @@
+import logging
+import re
+from datetime import datetime
+from typing import Optional
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
+from croniter import croniter
+
+from app.models.schedule import Schedule
+from app.core.exceptions import ScheduleParseException
+from app.schemas.schedule import ScheduleCreate, ScheduleUpdate
+from pydantic import BaseModel, Field
+from app.core.system_model import run_system_task
+from app.models.agent import Agent as AgentModel
+
+logger = logging.getLogger("ocin")
+
+
+class _ParsedSchedule(BaseModel):
+    """Structured output from the schedule label LLM parser."""
+    cron: str = Field(description="Standard 5-field Unix cron expression")
+    input: str = Field(description="The task the agent should perform each time it runs")
+
+
+async def _parse_schedule_with_llm(
+    db: AsyncSession,
+    user_id: str,
+    label: str,
+) -> dict:
+    """Parse plain-language schedule label to cron expression.
+
+    Strategy:
+      1. Try Anthropic Claude Haiku if an API key is configured.
+      2. Try OpenAI gpt-4o-mini if an API key is configured.
+      3. Fall back to simple regex parser.
+      4. If even that fails to produce valid cron, raise ScheduleParseException.
+    """
+    from app.config import settings
+
+    system_prompt = (
+        "You convert natural language schedule descriptions into standard 5-field cron "
+        "expressions (minute hour day month weekday). Return ONLY cron expression, "
+        "nothing else — no explanation, no markdown, no quotes, no prefix. "
+        "Examples:\n"
+        "  'every minute' -> * * * * *\n"
+        "  'every 5 minutes' -> */5 * * * *\n"
+        "  'every day at 9am' -> 0 9 * * *\n"
+        "  'every Monday at 8am' -> 0 8 * * 1\n"
+        "  'twice a day' -> 0 9,18 * * *\n"
+        "  'please run once every minute' -> * * * * *"
+    )
+
+    # Try Anthropic first
+    if getattr(settings, "ANTHROPIC_API_KEY", None):
+        try:
+            from anthropic import AsyncAnthropic
+            client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+            response = await client.messages.create(
+                model="claude-3-5-haiku-20241022",
+                max_tokens=32,
+                system=system_prompt,
+                messages=[
+                    {"role": "user", "content": f"Convert to cron: {label}"},
+                ],
+            )
+            # Extract text from response
+            cron_expr = ""
+            for block in response.content:
+                if getattr(block, "type", None) == "text":
+                    cron_expr = (block.text or "").strip()
+                    break
+
+            # Strip common formatting model sometimes adds
+            cron_expr = cron_expr.strip("`'\"")
+            if cron_expr.startswith("cron:"):
+                cron_expr = cron_expr[5:].strip()
+
+            try:
+                croniter(cron_expr)
+                logger.info({
+                    "event": "parse_schedule_llm",
+                    "label": label,
+                    "cron": cron_expr,
+                    "provider": "anthropic",
+                })
+                return cron_expr
+            except (ValueError, TypeError):
+                logger.warning({
+                    "event": "parse_schedule_llm",
+                    "label": label,
+                    "invalid_cron": cron_expr,
+                    "provider": "anthropic",
+                })
+                # fall through to openai or regex
+        except Exception as e:
+            logger.error({
+                "event": "parse_schedule_llm_failed",
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "provider": "anthropic",
+                "label": label,
+            })
+            # fall through
+
+    # Try OpenAI next
+    if getattr(settings, "OPENAI_API_KEY", None):
+        try:
+            from openai import AsyncOpenAI
+            client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+            response = await client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Convert to cron: {label}"},
+                ],
+                max_tokens=32,
+            )
+            cron_expr = (response.choices[0].message.content or "").strip()
+            cron_expr = cron_expr.strip("`'\"")
+
+            try:
+                croniter(cron_expr)
+                logger.info({
+                    "event": "parse_schedule_llm",
+                    "label": label,
+                    "cron": cron_expr,
+                    "provider": "openai",
+                })
+                return cron_expr
+            except (ValueError, TypeError):
+                logger.warning({
+                    "event": "parse_schedule_llm",
+                    "label": label,
+                    "invalid_cron": cron_expr,
+                    "provider": "openai",
+                })
+                # fall through
+        except Exception as e:
+            logger.warning({"event": "parse_schedule_llm", "error": str(e), "provider": "openai"})
+
+    # Final fallback: regex parser
+    cron_expr = _simple_parse_schedule(label)
+    try:
+        croniter(cron_expr)
+        return cron_expr
+    except (ValueError, TypeError):
+        raise ScheduleParseException(
+            "Could not understand schedule. Try 'every minute', 'every 5 minutes', "
+            "'every day at 9am', or 'every Monday at 8am'."
+        )
+
+
+def _simple_parse_schedule(label: str) -> str:
+    """Simple regex-based schedule parsing as fallback."""
+    label_lower = label.lower().strip()
+
+    # Bare canonical forms
+    if label_lower in ("every minute", "each minute", "minutely"):
+        return "* * * * *"
+    if label_lower in ("every hour", "each hour", "hourly"):
+        return "0 * * * *"
+    if label_lower in ("every day", "each day", "daily"):
+        return "0 9 * * *"
+
+    # Sentence forms — search anywhere in string, not just match from start
+    # "every minute" / "each minute" / "minutely" appearing anywhere in a sentence
+    if re.search(r"\b(every|each)\s+minute\b", label_lower) or "minutely" in label_lower:
+        return "* * * * *"
+
+    # "every N minutes" appearing anywhere
+    m = re.search(r"\bevery\s+(\d+)\s+minutes?\b", label_lower)
+    if m:
+        return f"*/{m.group(1)} * * * *"
+
+    # "every hour" appearing anywhere
+    if re.search(r"\b(every|each)\s+hour\b", label_lower) or "hourly" in label_lower:
+        return "0 * * * *"
+
+    # "every N hours" appearing anywhere
+    m = re.search(r"\bevery\s+(\d+)\s+hours?\b", label_lower)
+    if m:
+        return f"0 */{m.group(1)} * * *"
+
+    # Daily at specific time, e.g. "every day at 9am"
+    m = re.search(r"at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?", label_lower)
+    if m:
+        hour = int(m.group(1))
+        minute = int(m.group(2)) if m.group(2) else 0
+        if m.group(3) == "pm" and hour != 12:
+            hour += 12
+        if m.group(3) == "am" and hour == 12:
+            hour = 0
+        return f"{minute} {hour} * * *"
+
+    # Weekly patterns
+    days_map = {
+        "monday": 1, "tuesday": 2, "wednesday": 3, "thursday": 4,
+        "friday": 5, "saturday": 6, "sunday": 0,
+    }
+    for day, num in days_map.items():
+        if day in label_lower:
+            hour, minute = 9, 0
+            tm = re.search(r"at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?", label_lower)
+            if tm:
+                hour = int(tm.group(1))
+                minute = int(tm.group(2)) if tm.group(2) else 0
+                if tm.group(3) == "pm" and hour != 12:
+                    hour += 12
+                if tm.group(3) == "am" and hour == 12:
+                    hour = 0
+            return f"{minute} {hour} * * {num}"
+
+    # Default: daily at 9am
+    return "0 9 * * *"
+
+
+async def parse_schedule_label(label: str) -> str:
+    """Parse a plain-language schedule label to cron expression."""
+    cron_expr = await _parse_schedule_with_llm(label)
+
+    # Validate with croniter
+    try:
+        croniter(cron_expr)
+        return cron_expr
+    except (ValueError, TypeError) as e:
+        logger.error({"event": "parse_schedule", "error": str(e), "label": label})
+        raise ScheduleParseException(f"Invalid cron expression generated: {str(e)}")
+
+
+def calculate_next_run(cron_expression: str) -> datetime:
+    """Calculate the next run time from a cron expression."""
+    cron = croniter(cron_expression, datetime.utcnow())
+    return cron.get_next(datetime)
+
+
+async def create_schedule(
+    db: AsyncSession,
+    user_id: str,
+    schedule_data: ScheduleCreate,
+) -> Schedule:
+    """Create a new schedule."""
+    # Parse label to cron
+    cron_expr = await parse_schedule_label(schedule_data.label)
+
+    # Verify agent belongs to user
+    from app.services.agent_service import get_agent
+    agent = await get_agent(db, schedule_data.agent_id, user_id)
+    if not agent:
+        raise ValueError("Agent not found")
+
+    schedule = Schedule(
+        user_id=user_id,
+        agent_id=schedule_data.agent_id,
+        label=schedule_data.label,
+        cron_expression=cron_expr,
+        trigger_type=schedule_data.trigger_type,
+        payload=schedule_data.payload,
+        next_run_at=calculate_next_run(cron_expr),
+    )
+    db.add(schedule)
+    await db.commit()
+    await db.refresh(schedule)
+
+    logger.info({"event": "create_schedule", "schedule_id": str(schedule.id), "user_id": user_id})
+    return schedule
+
+
+async def list_schedules(
+    db: AsyncSession,
+    user_id: str,
+    skip: int = 0,
+    limit: int = 100,
+    active_only: bool = False,
+) -> list[Schedule]:
+    """List schedules for a user."""
+    query = select(Schedule).where(Schedule.user_id == user_id)
+    if active_only:
+        query = query.where(Schedule.is_active == True)
+    query = query.offset(skip).limit(limit)
+    result = await db.execute(query)
+    return list(result.scalars().all())
+
+
+async def get_schedule(db: AsyncSession, schedule_id: str, user_id: str) -> Optional[Schedule]:
+    """Get a schedule by ID (user-scoped)."""
+    result = await db.execute(
+        select(Schedule).where(Schedule.id == schedule_id, Schedule.user_id == user_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def update_schedule(
+    db: AsyncSession,
+    schedule_id: str,
+    user_id: str,
+    schedule_data: ScheduleUpdate,
+) -> Schedule:
+    """Update a schedule."""
+    schedule = await get_schedule(db, schedule_id, user_id)
+    if not schedule:
+        raise ValueError("Schedule not found")
+
+    # If label changed, re-parse to cron
+    if schedule_data.label is not None:
+        schedule.label = schedule_data.label
+        schedule.cron_expression = await parse_schedule_label(schedule_data.label)
+        schedule.next_run_at = calculate_next_run(schedule.cron_expression)
+
+    # Update other fields
+    if schedule_data.trigger_type is not None:
+        schedule.trigger_type = schedule_data.trigger_type
+    if schedule_data.payload is not None:
+        schedule.payload = schedule_data.payload
+    if schedule_data.is_active is not None:
+        schedule.is_active = schedule_data.is_active
+
+    await db.commit()
+    await db.refresh(schedule)
+
+    logger.info({"event": "update_schedule", "schedule_id": str(schedule.id), "user_id": user_id})
+    return schedule
+
+
+async def delete_schedule(db: AsyncSession, schedule_id: str, user_id: str) -> bool:
+    """Delete a schedule."""
+    schedule = await get_schedule(db, schedule_id, user_id)
+    if not schedule:
+        raise ValueError("Schedule not found")
+
+    await db.delete(schedule)
+    await db.commit()
+
+    logger.info({"event": "delete_schedule", "schedule_id": str(schedule.id), "user_id": user_id})
+    return True
+
+
+async def pause_schedule(db: AsyncSession, schedule_id: str, user_id: str) -> Schedule:
+    """Pause a schedule."""
+    schedule = await get_schedule(db, schedule_id, user_id)
+    if not schedule:
+        raise ValueError("Schedule not found")
+
+    schedule.is_active = False
+    await db.commit()
+    await db.refresh(schedule)
+
+    logger.info({"event": "pause_schedule", "schedule_id": str(schedule.id), "user_id": user_id})
+    return schedule
+
+
+async def resume_schedule(db: AsyncSession, schedule_id: str, user_id: str) -> Schedule:
+    """Resume a schedule."""
+    schedule = await get_schedule(db, schedule_id, user_id)
+    if not schedule:
+        raise ValueError("Schedule not found")
+
+    schedule.is_active = True
+    schedule.next_run_at = calculate_next_run(schedule.cron_expression)
+    await db.commit()
+    await db.refresh(schedule)
+
+    logger.info({"event": "resume_schedule", "schedule_id": str(schedule.id), "user_id": user_id})
+    return schedule
+
+
+async def get_all_active_schedules(db: AsyncSession) -> list[Schedule]:
+    """Get all active schedules for scheduler loading."""
+    result = await db.execute(
+        select(Schedule).where(Schedule.is_active == True, Schedule.trigger_type == "cron")
+    )
+    return list(result.scalars().all())
