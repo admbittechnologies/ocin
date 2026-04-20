@@ -1,0 +1,1506 @@
+{
+  "version": 1,
+  "bugs": [
+    {
+      "id": "bug-001",
+      "timestamp": "2026-04-07T08:16:08.626Z",
+      "error_message": "Type error",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T08:16:08.626Z"
+    },
+    {
+      "id": "bug-002",
+      "timestamp": "2026-04-07T12:45:00Z",
+      "error_message": "Chat messages show '...' instead of content and no character-by-character streaming",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "1. Backend cache replay sent word-level tokens instead of character-level tokens, and 2. Frontend fallback used timestamp comparison with UTC timezone differences",
+      "fix": "1. Backend chat.py line 293: Changed from word split to character iteration for cache replay. 2. Frontend Chat.tsx: Changed fallback from timestamp comparison to message count approach, set timeout from 3.5s to 4s",
+      "tags": [
+        "sse",
+        "streaming",
+        "fallback",
+        "timezone"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T12:45:00Z"
+    },
+    {
+      "id": "bug-003",
+      "timestamp": "2026-04-07T13:00:00Z",
+      "error_message": "Syntax error in Chat.tsx: Unexpected token and Unexpected eof at line 1050",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "Missing closing </div> tag for Right Panel div that starts at line 753",
+      "fix": "Added missing closing </div> tag after line 1026 to properly close Right Panel div structure",
+      "tags": [
+        "syntax",
+        "tsx",
+        "jsx",
+        "missing-tag"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T13:00:00Z"
+    },
+    {
+      "id": "bug-004",
+      "timestamp": "2026-04-16T14:30:00Z",
+      "error_message": "Tavily API key deletion not working - clicking Remove button shows 'Connected' status even after key deletion",
+      "file": "Backend - PUT /api/v1/settings/api-keys endpoint",
+      "root_cause": "Backend was treating empty api_key strings as content to be encrypted and saved instead of as deletion requests. Empty strings were encrypted and stored in database instead of triggering key deletion logic.",
+      "fix": "Backend fix: Added deletion detection (is_deletion = len(api_key) == 0) and proper tool deletion (await db.delete(tool)) when deletion requested. Now empty strings are properly handled as delete operations.",
+      "tags": [
+        "backend",
+        "api-keys",
+        "deletion",
+        "tavily",
+        "empty-string"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T14:30:00Z"
+    },
+    {
+      "id": "bug-004",
+      "timestamp": "2026-04-07T09:14:48.943Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "Condition was: if (msgs.length > msgCountBefore + 1 && newestAssistan)",
+      "fix": "Changed to: if (newestAssistant?.content)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T09:14:48.943Z"
+    },
+    {
+      "id": "bug-005",
+      "timestamp": "2026-04-07T09:15:38.544Z",
+      "error_message": "Fallback finding assistant messages but count check preventing them from rendering",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "Fallback condition msgs.length > msgCountBefore + 1 failed because DB count and UI count were different. Removed count check and replaced entire fallback logic with corrected poll function that includes attempts tracking and trimmed content filtering",
+      "fix": "1. Removed count check from condition, 2. Replaced entire fallback logic with corrected poll function that includes attempts tracking and trimmed content filtering, 3. Added attempts state variable",
+      "tags": [
+        "fallback",
+        "polling",
+        "logic",
+        "tsx"
+      ],
+      "related_bugs": [
+        "bug-003"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T09:15:38.544Z"
+    },
+    {
+      "id": "bug-007",
+      "timestamp": "2026-04-07T10:04:25.135Z",
+      "error_message": "Missing guard clause",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "No early return/throw for edge case: streamDoneRef.current",
+      "fix": "Added guard clause: if (streamDoneRef.current)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-07T10:04:42.930Z"
+    },
+    {
+      "id": "bug-008",
+      "timestamp": "2026-04-07T10:05:00Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/pages/Agents.tsx",
+      "root_cause": "Had \"max-w-6xl mx-auto space-y-6\"",
+      "fix": "Changed to \"mx-auto space-y-6\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T11:25:18.997Z"
+    },
+    {
+      "id": "bug-010",
+      "timestamp": "2026-04-07T11:38:24.481Z",
+      "error_message": "Agents page outer div had mx-auto constraint (narrow rendering)",
+      "file": "src/pages/Agents.tsx",
+      "root_cause": "Outer div at line 215 had className=\"mx-auto space-y-6\" which constrained width to ~1152px. Grid itself was correctly responsive. Changed to \"flex-1 overflow-hidden min-h-0 flex flex-col\" to match full-width pattern of other pages like Chat, Dashboard, etc.",
+      "fix": "Removed mx-auto constraint from outer div and changed to flex-1 for full width. Now Agents page fills available viewport width like other pages.",
+      "tags": [
+        "width-constraint",
+        "layout",
+        "responsive"
+      ],
+      "related_bugs": [
+        "bug-008"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T11:38:24.481Z"
+    },
+    {
+      "id": "bug-009",
+      "timestamp": "2026-04-07T10:10:00Z",
+      "error_message": "SSE EventSource cleanup missing",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "No cleanup of EventSource in done/onerror events, and in poll function when poll succeeds. Typing indicator could hang forever when SSE stalls, and orphaned connections could fire late events",
+      "fix": "1. Added 30s hard timeout to force close and use fallback if SSE stalls. 2. Added guards to ignore late events from done streams in token/message listeners. 3. Added timeout cleanup in done/onerror handlers. 4. Added EventSource close in poll function when it succeeds",
+      "tags": [
+        "sse",
+        "cleanup",
+        "error-handling",
+        "timeout",
+        "tsx"
+      ],
+      "related_bugs": [
+        "bug-007"
+      ],
+      "occurrences": 2,
+      "last_seen": "2026-04-07T10:04:42.930Z"
+    },
+    {
+      "id": "bug-009",
+      "timestamp": "2026-04-07T11:59:43.197Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/pages/Agents.tsx",
+      "root_cause": "Had \"mx-auto space-y-6\"",
+      "fix": "Changed to \"flex-1 overflow-hidden min-h-0 flex flex-col\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T11:59:43.197Z"
+    },
+    {
+      "id": "bug-011",
+      "timestamp": "2026-04-07T14:08:58.967Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/pages/Dashboard.tsx",
+      "root_cause": "Had \"max-w-6xl mx-auto flex items-center justify-cente",
+      "fix": "Changed to \"flex-1 min-h-0 flex items-center justify-center p\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-07T14:10:15.303Z"
+    },
+    {
+      "id": "bug-012",
+      "timestamp": "2026-04-07T14:11:41.901Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/pages/Memory.tsx",
+      "root_cause": "Had \"max-w-4xl mx-auto flex items-center justify-cente",
+      "fix": "Changed to \"flex-1 min-h-0 flex items-center justify-center p\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-07T14:12:07.127Z"
+    },
+    {
+      "id": "bug-013",
+      "timestamp": "2026-04-07T14:12:31.045Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "Had \"max-w-6xl mx-auto flex items-center justify-cente",
+      "fix": "Changed to \"flex-1 min-h-0 flex items-center justify-center p\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-07T14:13:19.538Z"
+    },
+    {
+      "id": "bug-014",
+      "timestamp": "2026-04-07T14:13:45.467Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/pages/Settings.tsx",
+      "root_cause": "Had \"max-w-2xl mx-auto space-y-8\"",
+      "fix": "Changed to \"flex-1 min-h-0 flex flex-col gap-8 p-6 lg:p-8\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T14:13:45.467Z"
+    },
+    {
+      "id": "bug-015",
+      "timestamp": "2026-04-07T14:14:12.951Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/pages/Tools.tsx",
+      "root_cause": "Had \"max-w-6xl mx-auto flex items-center justify-cente",
+      "fix": "Changed to \"flex-1 min-h-0 flex items-center justify-center p\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-07T14:14:38.351Z"
+    },
+    {
+      "id": "bug-016",
+      "timestamp": "2026-04-07T15:25:00Z",
+      "error_message": "Multiple pages had max-w-* mx-auto constraints causing narrow rendering",
+      "file": "src/pages/Dashboard.tsx, src/pages/Memory.tsx, src/pages/Runs.tsx, src/pages/Settings.tsx, src/pages/Tools.tsx",
+      "root_cause": "Page root wrappers used max-w-6xl/4xl/2xl mx-auto which constrained content to narrow centered columns instead of filling viewport width with proper padding",
+      "fix": "Replaced 10 className strings across 5 files: loading states changed to flex-1 min-h-0 flex items-center justify-center p-6 lg:p-8, content containers changed to flex-1 min-h-0 flex flex-col gap-6/8 p-6 lg:p-8",
+      "tags": [
+        "layout",
+        "width-constraint",
+        "responsive",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T15:25:00Z"
+    },
+    {
+      "id": "bug-017",
+      "timestamp": "2026-04-07T17:17:28.432Z",
+      "error_message": "Missing guard clause",
+      "file": "src/lib/api.ts",
+      "root_cause": "No early return/throw for edge case: res.status === 404",
+      "fix": "Added guard clause: if (res.status === 404)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T17:17:28.432Z"
+    },
+    {
+      "id": "bug-018",
+      "timestamp": "2026-04-07T17:19:03.631Z",
+      "error_message": "CSS fix: hover",
+      "file": "src/components/AppSidebar.tsx",
+      "root_cause": "hover: bg-sidebar-accent\" â†’ bg-sidebar-accent relative\"",
+      "fix": "Changed hover: bg-sidebar-accent\" â†’ bg-sidebar-accent relative\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T17:19:03.631Z"
+    },
+    {
+      "id": "bug-019",
+      "timestamp": "2026-04-08T07:33:41.103Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/lib/api.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T07:33:41.103Z"
+    },
+    {
+      "id": "bug-020",
+      "timestamp": "2026-04-08T07:34:00.000Z",
+      "error_message": "Approvals page crashes with TypeError: approvals.filter is not a function",
+      "file": "src/lib/api.ts",
+      "root_cause": "apiGetApprovals function returns whole backend response object { approvals: [...] } instead of unwrapping the inner array. Approvals.tsx tries to call .filter() on the object and crashes.",
+      "fix": "Changed apiGetApprovals return line from 'return await handleResponse(res) as Approval[]' to await response first, then extract and return data.approvals ?? [] to always return array with fallback for malformed responses",
+      "tags": [
+        "shape-mismatch",
+        "api-client",
+        "backend-integration",
+        "type-error"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T07:34:00.000Z"
+    },
+    {
+      "id": "bug-021",
+      "timestamp": "2026-04-08T08:53:58.623Z",
+      "error_message": "CSS fix: role",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "role: \"user\" | \"assistant\" â†’ \"user\" | \"assistant\" | \"error\"",
+      "fix": "Changed role: \"user\" | \"assistant\" â†’ \"user\" | \"assistant\" | \"error\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T08:53:58.623Z"
+    },
+    {
+      "id": "bug-022",
+      "timestamp": "2026-04-08T08:54:28.397Z",
+      "error_message": "Type error",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T08:54:28.397Z"
+    },
+    {
+      "id": "bug-023",
+      "timestamp": "2026-04-08T08:55:49.359Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T08:55:49.359Z"
+    },
+    {
+      "id": "bug-024",
+      "timestamp": "2026-04-08T09:14:46.590Z",
+      "error_message": "Missing guard clause",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "No early return/throw for edge case: pollCancelledRef.current",
+      "fix": "Added guard clause: if (pollCancelledRef.current)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T09:14:46.590Z"
+    },
+    {
+      "id": "bug-025",
+      "timestamp": "2026-04-08T13:29:54.117Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "Code path had no error handling â€” exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T13:29:54.117Z"
+    },
+    {
+      "id": "bug-026",
+      "timestamp": "2026-04-08T13:30:20.437Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "Had \"flex-1 min-h-0 flex flex-col gap-6 p-6 lg:p-8\"",
+      "fix": "Changed to \"flex-1 min-h-0 flex flex-col gap-6 p-6 lg:p-8 ove",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T13:30:20.437Z"
+    },
+    {
+      "id": "bug-027",
+      "timestamp": "2026-04-08T13:30:53.756Z",
+      "error_message": "Wrong reference: started should be started_at",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "Used \"started\" instead of \"started_at\"",
+      "fix": "Changed started â†’ started_at",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-08T13:31:07.838Z"
+    },
+    {
+      "id": "bug-028",
+      "timestamp": "2026-04-08T13:31:15.996Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T13:31:15.996Z"
+    },
+    {
+      "id": "bug-029",
+      "timestamp": "2026-04-08T13:31:43.152Z",
+      "error_message": "CSS fix: trigger",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "trigger: TRIGGER_LABELS[r.trigger] || r.trigger, â†’ r.schedule_id ? \"Schedule\" : \"Manual\",",
+      "fix": "Changed trigger: TRIGGER_LABELS[r.trigger] || r.trigger, â†’ r.schedule_id ? \"Schedule\" : \"Manual\",",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T13:31:43.152Z"
+    },
+    {
+      "id": "bug-030",
+      "timestamp": "2026-04-09T08:23:46.436Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/pages/Settings.tsx",
+      "root_cause": "Code path had no error handling â€” exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T08:23:46.437Z"
+    },
+    {
+      "id": "bug-031",
+      "timestamp": "2026-04-09T11:28:57.000Z",
+      "error_message": "Syntax error in Settings.tsx: Unexpected token ',' at line 13 - corrupted import statement",
+      "file": "src/pages/Settings.tsx",
+      "root_cause": "Line 13 contained corrupted text that appeared to be a sed/ed command: ',13a/apiSaveApiKey,/import { apiChangePassword, apiSaveApiKey, apiDeleteApiKey, apiGetApiKeys, apiUpdatePlan, apiDeleteAccount, } from \"@/lib/api\"; This was mixed with the normal import structure, causing a syntax error.",
+      "fix": "Removed the corrupted line 13 and cleaned up the import statement to have the proper structure: import { apiChangePassword, apiSaveApiKey, apiGetApiKeys, apiUpdatePlan, apiDeleteAccount, } from \"@/lib/api\";",
+      "tags": [
+        "syntax",
+        "corruption",
+        "import",
+        "tsx",
+        "file-corruption"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T11:28:57.000Z"
+    },
+    {
+      "id": "bug-032",
+      "timestamp": "2026-04-09T09:45:40.087Z",
+      "error_message": "Wrong reference: providers should be llmProviders",
+      "file": "src/pages/Settings.tsx",
+      "root_cause": "Used \"providers\" instead of \"llmProviders\"",
+      "fix": "Changed providers â†’ llmProviders",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T09:45:40.087Z"
+    },
+    {
+      "id": "bug-033",
+      "timestamp": "2026-04-09T10:04:12.225Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/pages/Dashboard.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T10:04:12.225Z"
+    },
+    {
+      "id": "bug-034",
+      "timestamp": "2026-04-09T10:04:33.898Z",
+      "error_message": "CSS fix: hover",
+      "file": "src/pages/Dashboard.tsx",
+      "root_cause": "hover: bg-accent/50 transition-colors\"> â†’ bg-accent/50 transition-colors ${run.schedule_id ? \"cursor-pointer\" : \"\"",
+      "fix": "Changed hover: bg-accent/50 transition-colors\"> â†’ bg-accent/50 transition-colors ${run.schedule_id ? \"cursor-pointer\" : \"\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T10:04:33.898Z"
+    },
+    {
+      "id": "bug-035",
+      "timestamp": "2026-04-09T10:07:04.371Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check) | Also: <div className=\"flex items-start justify-between\">; {runs.length > 0 && (",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-09T10:07:31.157Z"
+    },
+    {
+      "id": "bug-036",
+      "timestamp": "2026-04-09T10:07:39.530Z",
+      "error_message": "Wrong reference: runs should be filteredRuns",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "Used \"runs\" instead of \"filteredRuns\"",
+      "fix": "Changed runs â†’ filteredRuns",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T10:07:39.531Z"
+    },
+    {
+      "id": "bug-037",
+      "timestamp": "2026-04-09T12:00:00.000Z",
+      "error_message": "Dashboard recent runs don't link to schedules and tools_connected counts all tools including built-ins",
+      "file": "src/pages/Dashboard.tsx",
+      "root_cause": "1. RecentRun interface didn't include schedule_id/schedule_name, so runs couldn't link to schedules. 2. tools_connected was showing total tools including built-in (File, HTTP, DateTime, Wait) instead of just external tools that need configuration.",
+      "fix": "1. Updated RecentRun interface to include schedule_id, schedule_name, and agent_id. 2. Modified Dashboard.loadData to fetch tools and calculate tools_connected by filtering for external tools that are connected/configured. 3. Updated run rows to show schedule name with clickable link to /schedules when schedule_id exists. 4. Updated api.ts apiGetRecentRuns return type to include schedule fields.",
+      "tags": [
+        "feature-request",
+        "dashboard",
+        "schedules",
+        "tools",
+        "filtering",
+        "navigation"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T12:00:00.000Z"
+    },
+    {
+      "id": "bug-038",
+      "timestamp": "2026-04-09T12:00:00.000Z",
+      "error_message": "Runs page shows all runs mixed together, no way to filter manual vs scheduled runs",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "No filter UI to distinguish between scheduled and manual runs. All runs displayed in one list with just a label showing 'Schedule' or 'Manual'. Users wanted ability to filter or view only scheduled runs.",
+      "fix": "1. Added TriggerFilter type ('all' | 'scheduled' | 'manual') and triggerFilter state. 2. Created filteredRuns computed property that filters based on selected filter. 3. Added filter button group in header showing counts for All, Scheduled, and Manual with Calendar and Zap icons. 4. Enhanced Run interface to include schedule_id and schedule_name. 5. Updated trigger column to show schedule name with icon for scheduled runs. 6. Updated detail view header to show schedule name or 'Manual trigger' with appropriate icons. 7. Updated loadRuns to populate schedule_id and schedule_name from API response.",
+      "tags": [
+        "feature-request",
+        "filtering",
+        "runs",
+        "schedules",
+        "ui"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T12:00:00.000Z"
+    },
+    {
+      "id": "bug-039",
+      "timestamp": "2026-04-09T11:36:37.406Z",
+      "error_message": "Type error",
+      "file": "src/pages/Dashboard.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T11:36:37.406Z"
+    },
+    {
+      "id": "bug-040",
+      "timestamp": "2026-04-09T11:39:01.952Z",
+      "error_message": "Missing guard clause",
+      "file": "src/pages/Dashboard.tsx",
+      "root_cause": "No early return/throw for edge case: !agent || !agent.avatar_color",
+      "fix": "Added guard clause: if (!agent || !agent.avatar_color)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T11:39:01.952Z"
+    },
+    {
+      "id": "bug-041",
+      "timestamp": "2026-04-09T11:39:18.625Z",
+      "error_message": "CSS fix: hover",
+      "file": "src/pages/Dashboard.tsx",
+      "root_cause": "hover: bg-accent/50 transition-colors ${run.schedule_id ? \"cursor-pointer\" : \"\" â†’ bg-accent/50 transition-colors cursor-pointer\"",
+      "fix": "Changed hover: bg-accent/50 transition-colors ${run.schedule_id ? \"cursor-pointer\" : \"\" â†’ bg-accent/50 transition-colors cursor-pointer\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T11:39:18.625Z"
+    },
+    {
+      "id": "bug-042",
+      "timestamp": "2026-04-09T11:40:45.955Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T11:40:45.955Z"
+    },
+    {
+      "id": "bug-043",
+      "timestamp": "2026-04-09T11:41:08.898Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/pages/Dashboard.tsx",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 11â†’5 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T11:41:08.898Z"
+    },
+    {
+      "id": "bug-044",
+      "timestamp": "2026-04-09T12:20:00.000Z",
+      "error_message": "Dashboard shows incorrect tools_connected count (3 instead of 1), generic bot avatars, and runs don't show input/output on click",
+      "file": "src/pages/Dashboard.tsx",
+      "root_cause": "1. tools_connected was showing 3 because frontend filtering logic was correct but the API might be returning incorrect data. 2. agentAvatars object was empty - never populated with actual agent avatar data. 3. Runs were clickable but only navigated to schedules page, not showing input/output detail view.",
+      "fix": "1. Kept the tools_connected filtering logic (filters for !builtin && (connected || configured)), added debug logging to troubleshoot. 2. Imported AVATARS and AVATAR_COLORS, created getAgentAvatarUrl function to match agent avatar_color to correct avatar image, updated recent runs to use real agent avatars. 3. Changed run click to navigate to /runs with state.selectedRunId, updated Runs page to check location.state and auto-select the run, showing full input/output/detail view.",
+      "tags": [
+        "feature-request",
+        "dashboard",
+        "avatars",
+        "navigation",
+        "detail-view"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T12:20:00.000Z"
+    },
+    {
+      "id": "bug-045",
+      "timestamp": "2026-04-09T11:55:25.628Z",
+      "error_message": "CSS fix: tools_connected, t",
+      "file": "src/pages/Dashboard.tsx",
+      "root_cause": "tools_connected: only count external tools that are configured â†’ only count external tools (composio, apify, maton) that are configured; t: any) => !t.builtin && (t.connected || t.configured) â†’ any) => !t.builtin && (t.connected || t.configured) && t.source !== \"api_key\"",
+      "fix": "Changed tools_connected: only count external tools that are configured â†’ only count external tools (composio, apify, maton) that are configured; t: any) => !t.builtin && (t.connected || t.configured) â†’ any) => !t.builtin && (t.connected || t.configured) && t.source !== \"api_key\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-09T11:55:25.628Z"
+    },
+    {
+      "id": "bug-046",
+      "timestamp": "2026-04-09T13:45:03.126Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/pages/Schedules.tsx",
+      "root_cause": "20 lines replaced/restructured",
+      "fix": "Rewrote 75â†’114 lines (20 removed) | Also: <Button; variant=\"ghost\"",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-09T13:45:55.927Z"
+    },
+    {
+      "id": "bug-047",
+      "timestamp": "2026-04-10T10:57:52.755Z",
+      "error_message": "Type error",
+      "file": "src/pages/Approvals.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T10:57:52.755Z"
+    },
+    {
+      "id": "bug-048",
+      "timestamp": "2026-04-10T11:29:01.018Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/pages/Approvals.tsx",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 16â†’12 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T11:29:01.018Z"
+    },
+    {
+      "id": "bug-049",
+      "timestamp": "2026-04-10T11:29:24.773Z",
+      "error_message": "CSS fix: hover",
+      "file": "src/pages/Approvals.tsx",
+      "root_cause": "hover: bg-destructive hover:text-destructive-foreground\" â†’ bg-destructive hover:text-destructive-foreground flex-1\"",
+      "fix": "Changed hover: bg-destructive hover:text-destructive-foreground\" â†’ bg-destructive hover:text-destructive-foreground flex-1\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T11:29:24.773Z"
+    },
+    {
+      "id": "bug-050",
+      "timestamp": "2026-04-10T11:44:30.453Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/pages/Approvals.tsx",
+      "root_cause": "22 lines replaced/restructured",
+      "fix": "Rewrote 66â†’34 lines (22 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T11:44:30.454Z"
+    },
+    {
+      "id": "bug-051",
+      "timestamp": "2026-04-10T13:54:29.912Z",
+      "error_message": "Missing guard clause",
+      "file": "src/lib/api.ts",
+      "root_cause": "No early return/throw for edge case: !res.ok",
+      "fix": "Added guard clause: if (!res.ok)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T13:54:29.912Z"
+    },
+    {
+      "id": "bug-052",
+      "timestamp": "2026-04-10T13:55:37.037Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/pages/Agents.tsx",
+      "root_cause": "10 lines replaced/restructured",
+      "fix": "Rewrote 24â†’15 lines (10 removed) | Also: // Helper to get avatar image URL from avatar_colo; const getAvatarUrl = (avatar_color: string): strin",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-10T13:56:02.611Z"
+    },
+    {
+      "id": "bug-053",
+      "timestamp": "2026-04-10T13:56:31.852Z",
+      "error_message": "Missing error handling in AgentListItem",
+      "file": "src/pages/Agents.tsx",
+      "root_cause": "Code path had no error handling â€” exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T13:56:31.852Z"
+    },
+    {
+      "id": "bug-054",
+      "timestamp": "2026-04-10T13:57:52.024Z",
+      "error_message": "CSS fix: is_active",
+      "file": "src/pages/Agents.tsx",
+      "root_cause": "is_active: checked â†’ active",
+      "fix": "Changed is_active: checked â†’ active",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T13:57:52.024Z"
+    },
+    {
+      "id": "bug-055",
+      "timestamp": "2026-04-10T13:58:48.385Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/pages/Approvals.tsx",
+      "root_cause": "42 lines replaced/restructured",
+      "fix": "Rewrote 64â†’21 lines (42 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T13:58:48.385Z"
+    },
+    {
+      "id": "bug-056",
+      "timestamp": "2026-04-10T13:59:42.479Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "15 lines replaced/restructured",
+      "fix": "Rewrote 40â†’25 lines (15 removed) | Also: {agents.map(agent => {; const isActive = activeAgent?.id === agent.id;",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-10T14:02:25.598Z"
+    },
+    {
+      "id": "bug-057",
+      "timestamp": "2026-04-10T14:00:02.962Z",
+      "error_message": "CSS fix: agent",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "agent: activeAgent || { id: \"system\", name: \"System\", avatar_color: \"#ef4444\" â†’ activeAgent || { id: \"system\", name: \"System\", avatar: \"avatar-01\"",
+      "fix": "Changed agent: activeAgent || { id: \"system\", name: \"System\", avatar_color: \"#ef4444\" â†’ activeAgent || { id: \"system\", name: \"System\", avatar: \"avatar-01\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-10T14:00:49.257Z"
+    },
+    {
+      "id": "bug-058",
+      "timestamp": "2026-04-10T14:05:11.726Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/pages/Dashboard.tsx",
+      "root_cause": "15 lines replaced/restructured",
+      "fix": "Rewrote 26â†’10 lines (15 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T14:05:11.726Z"
+    },
+    {
+      "id": "bug-059",
+      "timestamp": "2026-04-10T14:07:26.913Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/lib/avatars.ts",
+      "root_cause": "13 lines replaced/restructured",
+      "fix": "Rewrote 25â†’5 lines (13 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T14:07:26.913Z"
+    },
+    {
+      "id": "bug-060",
+      "timestamp": "2026-04-10T14:20:26.500Z",
+      "error_message": "CSS fix: content",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "content: string â†’ lastMessage.content, time: lastMessage.time",
+      "fix": "Changed content: string â†’ lastMessage.content, time: lastMessage.time",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T14:20:26.500Z"
+    },
+    {
+      "id": "bug-061",
+      "timestamp": "2026-04-10T15:33:14.535Z",
+      "error_message": "CSS fix: group-hover",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "group-hover: opacity-100 transition-opacity text-muted-foreground hover:text-destructive\" â†’ opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer\"",
+      "fix": "Changed group-hover: opacity-100 transition-opacity text-muted-foreground hover:text-destructive\" â†’ opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T15:33:14.535Z"
+    },
+    {
+      "id": "bug-062",
+      "timestamp": "2026-04-10T15:37:15.722Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "Code path had no error handling â€” exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T15:37:15.722Z"
+    },
+    {
+      "id": "bug-063",
+      "timestamp": "2026-04-10T15:46:44.605Z",
+      "error_message": "Wrong reference: Broom should be Trash",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "Used \"Broom\" instead of \"Trash\"",
+      "fix": "Changed Broom â†’ Trash",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-10T15:47:17.333Z"
+    },
+    {
+      "id": "bug-064",
+      "timestamp": "2026-04-10T15:51:16.515Z",
+      "error_message": "CSS fix: hover",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "hover: text-destructive hover:bg-destructive/10 transition-colors\" â†’ text-destructive hover:bg-destructive/10 transition-colors ml-auto\"",
+      "fix": "Changed hover: text-destructive hover:bg-destructive/10 transition-colors\" â†’ text-destructive hover:bg-destructive/10 transition-colors ml-auto\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T15:51:16.515Z"
+    },
+    {
+      "id": "bug-065",
+      "timestamp": "2026-04-10T16:05:21.417Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 36â†’58 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T16:05:21.417Z"
+    },
+    {
+      "id": "bug-066",
+      "timestamp": "2026-04-10T16:14:29.736Z",
+      "error_message": "CSS fix: text",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "text: string): React.ReactNode => { â†’ string): React.ReactNode[] => {",
+      "fix": "Changed text: string): React.ReactNode => { â†’ string): React.ReactNode[] => {",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T16:14:29.736Z"
+    },
+    {
+      "id": "bug-067",
+      "timestamp": "2026-04-12T21:33:12.094Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "10 lines replaced/restructured",
+      "fix": "Rewrote 15â†’4 lines (10 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T21:33:12.095Z"
+    },
+    {
+      "id": "bug-068",
+      "timestamp": "2026-04-12T21:33:39.869Z",
+      "error_message": "CSS fix: content",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "content: lastMsg.content + data.content â†’ data.content,",
+      "fix": "Changed content: lastMsg.content + data.content â†’ data.content,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-12T21:33:50.312Z"
+    },
+    {
+      "id": "bug-069",
+      "timestamp": "2026-04-12T21:35:53.229Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "Condition was: if (attempts > 40)",
+      "fix": "Changed to: if (attemptsRef.current > 40)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T21:35:53.229Z"
+    },
+    {
+      "id": "bug-084",
+      "timestamp": "2026-04-12T00:00:00.000Z",
+      "error_message": "Ghost \"...\" bubble appears in chat thread above actual streamed response",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "1. Empty assistant message was created with content: '' and added to messages array. 2. Rendering logic showed '...' when content was falsy (line 901: {msg.content ? renderMessageContent(...) : <span>...</span>}). 3. This created persistent ghost bubble before tokens arrived, and even if streaming worked, the placeholder rendered '...' during the gap.",
+      "fix": "1. Removed empty assistant placeholder creation (lines 473-481). 2. Removed lastAssistantMessageIdRef ref. 3. Changed rendering to only show content when msg.content exists (removed '...' fallback). 4. Updated SSE handlers (message/token events) to create assistant message when first content arrives instead of updating a placeholder. 5. Updated done event handler to find last message differently. 6. Updated fallback polling logic to match new pattern (create/update last assistant message). 7. Changed attempts state to use ref for poll function to avoid constant assignment error.",
+      "tags": [
+        "ui-bug",
+        "rendering",
+        "sse",
+        "streaming",
+        "chat",
+        "message-display"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T00:00:00.000Z"
+    },
+    {
+      "id": "bug-004",
+      "timestamp": "2026-04-13T00:00:00.000Z",
+      "error_message": "User message text duplicated in attachment bubble - text appears twice (above and below image)",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "Message bubble renders msg.content twice: once before attachments (line 876) and once after (lines 899-902)",
+      "fix": "Removed the first renderMessageContent call that appeared before the attachments block. Content now renders only once after attachments.",
+      "tags": [
+        "ui",
+        "duplicate",
+        "rendering",
+        "attachments",
+        "message-bubble"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T00:00:00.000Z"
+    },
+    {
+      "id": "bug-005",
+      "timestamp": "2026-04-13T00:00:00.000Z",
+      "error_message": "Stray 'Ã§' character appearing in submitted message text",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "IME/dead-key characters (like accent keys) being submitted when Enter is pressed during composition. No composition event handling prevented this.",
+      "fix": "Added isComposing state and composition event handlers (onCompositionStart, onCompositionEnd) to textarea. Updated handleKeyDown to prevent message submission during IME composition.",
+      "tags": [
+        "ime",
+        "keyboard",
+        "composition",
+        "input-handling",
+        "internationalization"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T00:00:00.000Z"
+    },
+    {
+      "id": "bug-073",
+      "timestamp": "2026-04-13T19:30:09.541Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "Code path had no error handling â€” exceptions would propagate uncaught",
+      "fix": "Added try/catch block | Also: attemptsRef.current = 0;; // Close any prior EventSource before opening new one | Also: // Poll fallback function that finds the assistant message c; const startPollFallback = (",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-13T19:33:43.633Z"
+    },
+    {
+      "id": "bug-074",
+      "timestamp": "2026-04-13T19:32:09.748Z",
+      "error_message": "CSS fix: timestamp",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "timestamp: new Date(), â†’ userMsgTimestamp,",
+      "fix": "Changed timestamp: new Date(), â†’ userMsgTimestamp,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-13T19:32:58.819Z"
+    },
+    {
+      "id": "bug-075",
+      "timestamp": "2026-04-13T19:35:01.602Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "54 lines replaced/restructured",
+      "fix": "Rewrote 65â†’13 lines (54 removed) | Also: console.warn(\"SSE hard timeout (30s) â€” closing and; setIsTyping(false);",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-13T19:35:44.603Z"
+    },
+    {
+      "id": "bug-076",
+      "timestamp": "2026-04-13T20:00:00.000Z",
+      "error_message": "SSE connection drops mid-stream, showing stale content from previous turn in new bubble",
+      "file": "src/pages/Chat.tsx",
+      "root_cause": "1. SSE error handler only closed connection, did not trigger poll fallback. 2. Poll fallback used \"newest assistant message\" which could be from previous turn. 3. No correlation between user message and assistant reply. 4. Empty messages showed \"...\" instead of typing indicator. 5. No EventSource cleanup on unmount or before new connections.",
+      "fix": "1. Added eventSourceRef for cleanup on unmount and before new connections. 2. Store user message_id and created_at in refs for correlation. 3. On SSE error: trigger immediate poll with startPollFallback. 4. Poll finds assistant message using created_at comparison (not \"newest\"). 5. Poll keeps isTyping=true until content found. 6. Empty messages hidden (typing indicator shows separately). 7. Added logging: SSE_FALLBACK_TRIGGERED, ASSISTANT_MSG_RESOLVED. 8. Hard timeout triggers poll instead of giving up. 9. Added pollFallbackActiveRef flag to prevent duplicate polls.",
+      "tags": [
+        "sse",
+        "streaming",
+        "fallback",
+        "correlation",
+        "resilience"
+      ],
+      "related_bugs": [
+        "bug-002"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T20:00:00.000Z"
+    },
+    {
+      "id": "bug-077",
+      "timestamp": "2026-04-14T10:24:26.176Z",
+      "error_message": "Wrong reference: filtered should be approvals",
+      "file": "src/pages/Approvals.tsx",
+      "root_cause": "Used \"filtered\" instead of \"approvals\"",
+      "fix": "Changed filtered → approvals",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-14T10:24:32.352Z"
+    },
+    {
+      "id": "bug-078",
+      "timestamp": "2026-04-14T12:24:00.000Z",
+      "error_message": "Approvals page tabs don't fetch new data when switched",
+      "file": "src/pages/Approvals.tsx",
+      "root_cause": "useEffect dependency array was empty [] so loadApprovals only ran on mount. Redundant client-side filtering duplicated server-side logic.",
+      "fix": "1. Changed useEffect dependency from [] to [filter] so loadApprovals runs on every tab switch. 2. Removed redundant filtered variable that duplicated server-side filtering. 3. Render approvals directly instead of filtered.",
+      "tags": [
+        "useEffect",
+        "dependency",
+        "filtering",
+        "tab-switching",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T12:24:00.000Z"
+    },
+    {
+      "id": "bug-079",
+      "timestamp": "2026-04-14T10:31:45.180Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/components/StatusBadge.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T10:31:45.180Z"
+    },
+    {
+      "id": "bug-080",
+      "timestamp": "2026-04-14T12:32:00.000Z",
+      "error_message": "StatusBadge crashes on Approved/Rejected tabs: Cannot read properties of undefined (reading 'className')",
+      "file": "src/components/StatusBadge.tsx",
+      "root_cause": "StatusBadge only handled run statuses (pending, running, success, failed, awaiting_approval) but Approvals page sends approval statuses (approved, rejected, expired). Direct access to statusConfig[status].className failed when status was undefined.",
+      "fix": "1. Expanded Status type to include ApprovalStatus (pending, approved, rejected, expired). 2. Added approval status configurations: approved (green), rejected (red), expired (gray). 3. Added defensive fallback: statusConfig[status] ?? statusConfig.unknown with unknown config (neutral gray). 4. All statuses now render safely with human-readable labels.",
+      "tags": [
+        "status-badge",
+        "approval-statuses",
+        "type-safety",
+        "defensive-programming",
+        "tsx"
+      ],
+      "related_bugs": [
+        "bug-079"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T12:32:00.000Z"
+    },
+    {
+      "id": "bug-081",
+      "timestamp": "2026-04-14T12:38:38.582Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T12:38:38.582Z"
+    },
+    {
+      "id": "bug-082",
+      "timestamp": "2026-04-14T12:40:37.874Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T12:40:37.874Z"
+    },
+    {
+      "id": "bug-082",
+      "timestamp": "2026-04-14T12:40:00.000Z",
+      "error_message": "Runs detail page shows \"Waiting for output...\" even after completion, no auto-refresh, no tool call display, metadata not shown",
+      "file": "src/pages/Runs.tsx",
+      "root_cause": "1. No polling mechanism to refresh run data while still executing. 2. Detail view didn't render based on status - always showed stream view even for completed runs. 3. Tool calls not properly rendered from API response. 4. No metadata strip (tokens, cost, duration, agent name). 5. Header showed wrong schedule label.",
+      "fix": "1. Added polling mechanism: setInterval that refetches run every 2 seconds while status is running/pending, stops on completion. 2. Complete detail view refactor with status-based rendering: running/pending shows spinner with input, success shows output + tool calls + metadata strip, failed shows error + input, archived shows message. 3. Tool calls rendered as collapsible accordion with \"Show more\" for truncated content (>2000 chars). 4. Header now uses correct schedule_label field from API. 5. Fixed table to use schedule_label. 6. Added polling cleanup on unmount and navigation.",
+      "tags": [
+        "polling",
+        "status-based-rendering",
+        "tool-calls",
+        "metadata",
+        "header-improvements",
+        "auto-refresh",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T12:40:00.000Z"
+    },
+    {
+      "id": "bug-084",
+      "timestamp": "2026-04-16T15:39:07.071Z",
+      "error_message": "CSS fix: message",
+      "file": "src/pages/Settings.tsx",
+      "root_cause": "message: \"Failed to save API key\" → \"Failed to save Tavily key\"",
+      "fix": "Changed message: \"Failed to save API key\" → \"Failed to save Tavily key\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T15:39:07.071Z"
+    },
+    {
+      "id": "bug-085",
+      "timestamp": "2026-04-16T15:46:06.697Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/pages/Settings.tsx",
+      "root_cause": "Had \"border-border text-foreground\"",
+      "fix": "Changed to \"Tavily\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T15:46:06.697Z"
+    },
+    {
+      "id": "bug-086",
+      "timestamp": "2026-04-16T15:46:14.834Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/lib/api.ts",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 19→8 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T15:46:14.834Z"
+    },
+    {
+      "id": "bug-087",
+      "timestamp": "2026-04-16T16:00:22.392Z",
+      "error_message": "CSS fix: message",
+      "file": "src/pages/Settings.tsx",
+      "root_cause": "message: \"Failed to save Tavily key\" → \"Failed to remove Tavily key\"",
+      "fix": "Changed message: \"Failed to save Tavily key\" → \"Failed to remove Tavily key\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T16:00:22.392Z"
+    },
+    {
+      "id": "bug-089",
+      "timestamp": "2026-04-16T20:04:44.875Z",
+      "error_message": "Missing guard clause",
+      "file": "src/pages/Agents.tsx",
+      "root_cause": "No early return/throw for edge case: diffSecs < 60",
+      "fix": "Added guard clause: if (diffSecs < 60)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T20:04:44.875Z"
+    },
+    {
+      "id": "bug-090",
+      "timestamp": "2026-04-16T20:05:21.468Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/pages/Agents.tsx",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T20:05:21.468Z"
+    },
+    {
+      "id": "bug-091",
+      "timestamp": "2026-04-16T20:06:01.945Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/pages/Agents.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T20:06:01.945Z"
+    }
+  ]
+}

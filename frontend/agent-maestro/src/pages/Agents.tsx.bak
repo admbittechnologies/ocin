@@ -1,0 +1,407 @@
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Bot, Plus, Search, MoreVertical, Pencil, Trash2, Check, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { EmptyState } from "@/components/EmptyState";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AVATARS } from "@/lib/avatars";
+import ocinAvatar from "@/assets/avatars/ocin-avatar.png";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { apiGetAgents, apiCreateAgent, apiUpdateAgent, apiDeleteAgent, apiGetApiKeys, apiGetProviderModels } from "@/lib/api";
+
+// Backend returns avatar_color as a hex color string, not a filename
+// We store the avatar_color in state, and display uses full path from AVATARS
+interface Agent {
+  id: string;
+  name: string;
+  description: string;
+  avatar_color: string;  // Backend field - hex color like "#6366f1"
+  user_id: string;       // Backend field
+  role: string;
+  provider: string;
+  model_id: string;      // Backend field
+  temperature: number;  // Backend field
+  system_prompt: string; // Backend field
+  active: boolean;
+  tools: string[];
+}
+
+const ALL_PROVIDERS = ["OpenAI", "Anthropic", "Google", "Ollama", "OpenRouter", "Mistral", "Grok", "Qwen", "DeepSeek", "Z.ai"];
+const roles: Agent["role"][] = ["coordinator", "worker", "standalone"];
+
+const OCIN_ID = "ocin";
+
+// Backend returns avatar_color (e.g., "#6366f1"), we store it in state
+// For display, we need full path from AVATARS array
+const emptyAgent: {
+  id: "",
+  name: "",
+  description: "",
+  avatar_color: AVATARS[0],  // Stored backend value
+  role: "standalone",
+  provider: "",
+  model_id: "",
+  temperature: 0.5,
+  system_prompt: "",
+  active: true,
+  tools: [],
+  user_id: "",
+};
+
+// Helper to get full avatar URL from avatar_color for display
+const getAvatarUrl = (avatar_color: string): string => {
+  // OCIN avatar is imported directly
+  if (avatar_color === 'ocin') return ocinAvatar;
+  // If it's already a full URL or starts with /, return as-is
+  if (!avatar_color) return AVATARS[0];
+  // Backend returns hex color (e.g., "#6366f1"), return as-is since backend stores it as string
+  return avatar_color;
+};
+
+export default function Agents() {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [search, setSearch] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingAgent, setEditingAgent] = useState<Agent & { id?: string }>(emptyAgent);
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+  const [providerModels, setProviderModels] = useState<Record<string, string[]>>({});
+  const [loadingModels, setLoadingModels] = useState<Record<string, boolean>>({});
+
+  // Get configured providers (those with API keys)
+  const configuredProviders = ALL_PROVIDERS.filter(p => {
+    const key = apiKeys[p];
+    return key && key.length > 0 && !key.startsWith("...");
+  });
+
+  const filtered = agents.filter(a => a.name.toLowerCase().includes(search.toLowerCase()));
+
+  // Load agents and API keys on mount
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [agentsData, keysData] = await Promise.all([
+        apiGetAgents(),
+        apiGetApiKeys(),
+      ]);
+      console.log("Loaded agents:", agentsData);
+      console.log("Loaded API keys:", keysData);
+      setAgents(agentsData);
+      setApiKeys(keysData);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to load data";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch models when provider changes
+  const handleProviderChange = async (provider: string) => {
+    setEditingAgent(prev => ({ ...prev, provider, model_id: "" }));
+    setProviderModels(prev => ({ ...prev, [provider]: [] }));
+
+    if (!provider) return;
+
+    try {
+      setLoadingModels(prev => ({ ...prev, [provider]: true }));
+      const data = await apiGetProviderModels(provider);
+      setProviderModels(prev => ({ ...prev, [provider]: data.models }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to load models";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setLoadingModels(prev => ({ ...prev, [provider]: false }));
+    }
+  };
+
+  const handleSave = async () => {
+    if (!editingAgent.name.trim()) {
+      toast({ title: "Error", description: "Agent name is required", variant: "destructive" });
+      return;
+    }
+    if (!editingAgent.provider) {
+      toast({ title: "Error", description: "Provider is required", variant: "destructive" });
+      return;
+    }
+    if (!editingAgent.model_id) {
+      toast({ title: "Error", description: "Model ID is required", variant: "destructive" });
+      return;
+    }
+
+    try {
+      if (editingAgent.id) {
+        await apiUpdateAgent(editingAgent.id, {
+          name: editingAgent.name,
+          description: editingAgent.description,
+          avatar_color: editingAgent.avatar_color,  // Send backend field name
+          role: editingAgent.role,
+          model_provider: editingAgent.provider,
+          model_id: editingAgent.model_id,
+          temperature: editingAgent.temperature,
+          system_prompt: editingAgent.system_prompt,
+          tools: editingAgent.tools,
+        });
+        toast({ title: "Agent updated" });
+      } else {
+        await apiCreateAgent({
+          name: editingAgent.name,
+          description: editingAgent.description,
+          avatar_color: editingAgent.avatar_color,  // Send backend field name
+          role: editingAgent.role,
+          model_provider: editingAgent.provider,
+          model_id: editingAgent.model_id,
+          temperature: editingAgent.temperature,
+          system_prompt: editingAgent.system_prompt,
+          tools: editingAgent.tools,
+        });
+        toast({ title: "Agent created" });
+      }
+      await loadData();
+      setFormOpen(false);
+      setEditingAgent(emptyAgent);
+      setProviderModels({});
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save agent";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+
+    try {
+      await apiDeleteAgent(deleteId);
+      toast({ title: "Agent deleted" });
+      await loadData();
+      setDeleteId(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to delete agent";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    }
+  };
+
+  const handleEdit = (agent: Agent) => {
+    setEditingAgent({
+      ...agent,
+      // Ensure all fields are populated
+      model_id: agent.model_id || "",
+      system_prompt: agent.system_prompt || "",
+      temperature: agent.temperature ?? 0.5,
+    });
+    setFormOpen(true);
+    // Pre-fetch models for this provider
+    if (agent.provider && !providerModels[agent.provider]) {
+      handleProviderChange(agent.provider);
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Agents</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage your AI agents</p>
+        </div>
+        <Button className="gradient-primary text-primary-foreground" onClick={() => { setEditingAgent(emptyAgent); setFormOpen(true); }}>
+          <Plus className="h-4 w-4 mr-2" /> Create agent
+        </Button>
+      </div>
+
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Search agents..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-secondary border-border" />
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={Bot} title="No agents yet" description="Create your first AI agent to get started." actionLabel="Create agent" onAction={() => { setEditingAgent(emptyAgent); setFormOpen(true); }} />
+      ) : (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(agent => (
+            <div key={agent.id} className="rounded-xl border border-border bg-card p-5 shadow-card hover:border-primary/20 transition-all">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <img src={getAvatarUrl(agent.avatar_color)} alt={agent.name} className="h-10 w-10 rounded-lg object-cover" loading="lazy" width={40} height={40} />
+                  <div>
+                    <h3 className="text-foreground font-medium text-sm">{agent.name}</h3>
+                    <span className="text-xs text-muted-foreground capitalize">{agent.role} · {agent.provider}</span>
+                  </div>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-card border-border">
+                    <DropdownMenuItem onClick={() => handleEdit(agent)}>
+                      <Pencil className="h-4 w-4 mr-2" /> Edit
+                    </DropdownMenuItem>
+                    {agent.id !== OCIN_ID && (
+                      <DropdownMenuItem onClick={() => setDeleteId(agent.id)} className="text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4 line-clamp-2">{agent.description}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono text-muted-foreground">{agent.model_id}</span>
+                <Switch
+                  checked={agent.active}
+                  onCheckedChange={async checked => {
+                        try {
+                          await apiUpdateAgent(agent.id, { active: checked });
+                          setAgents(prev => prev.map(a => a.id === agent.id ? { ...a, active: checked } : a));
+                        } catch (error) {
+                          const message = error instanceof Error ? error.message : "Failed to update agent";
+                          toast({ title: "Error", description: message, variant: "destructive" });
+                        }
+                      }}
+                />
+              </div>
+            </div>
+          ))}
+        </motion.div>
+      )}
+
+      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+        <DialogContent className="bg-card border-border max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">{editingAgent.id ? "Edit Agent" : "Create Agent"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-foreground text-sm">Name</Label>
+              <Input value={editingAgent.name} onChange={e => setEditingAgent(prev => ({ ...prev, name: e.target.value }))} className="bg-secondary border-border" placeholder="My Agent" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-foreground text-sm">Description</Label>
+              <Input value={editingAgent.description} onChange={e => setEditingAgent(prev => ({ ...prev, description: e.target.value }))} className="bg-secondary border-border" placeholder="What does this agent do?" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-foreground text-sm">Avatar</Label>
+              <ScrollArea className="h-[180px] rounded-lg border border-border bg-secondary/50 p-3">
+                <div className="grid grid-cols-6 gap-2">
+                  {AVATARS.map((src, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setEditingAgent(prev => ({ ...prev, avatar_color: src }))}
+                      className={`relative h-14 w-14 rounded-lg border-2 overflow-hidden transition-all hover:scale-105 ${
+                        editingAgent.avatar_color === src
+                          ? "border-primary ring-1 ring-primary/40"
+                          : "border-transparent hover:border-border"
+                      }`}
+                    >
+                      <img src={src} alt={`Avatar ${i + 1}`} className="h-full w-full object-cover" loading="lazy" width={56} height={56} />
+                      {editingAgent.avatar_color === src && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <Check className="h-4 w-4 text-primary" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground text-sm">Role</Label>
+                <Select value={editingAgent.role} onValueChange={v => setEditingAgent(prev => ({ ...prev, role: v as Agent["role"] }))}>
+                  <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    {roles.map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground text-sm">Provider</Label>
+                {configuredProviders.length === 0 ? (
+                  <div className="text-xs text-muted-foreground italic">Add API keys in Settings first</div>
+                ) : (
+                  <Select value={editingAgent.provider} onValueChange={handleProviderChange} disabled={configuredProviders.length === 0}>
+                    <SelectTrigger className="bg-secondary border-border">
+                      {loadingModels[editingAgent.provider] ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue placeholder="Select provider" />}
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      {configuredProviders.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-foreground text-sm">Model</Label>
+              {loadingModels[editingAgent.provider] ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Loading models...
+                </div>
+              ) : providerModels[editingAgent.provider] && providerModels[editingAgent.provider].length > 0 ? (
+                <Select value={editingAgent.model_id} onValueChange={v => setEditingAgent(prev => ({ ...prev, model_id: v }))}>
+                  <SelectTrigger className="bg-secondary border-border font-mono text-sm"><SelectValue placeholder="Select model" /></SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    {providerModels[editingAgent.provider].map(m => <SelectItem key={m} value={m} className="font-mono text-xs">{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  value={editingAgent.model_id}
+                  onChange={e => setEditingAgent(prev => ({ ...prev, model_id: e.target.value }))}
+                  className="bg-secondary border-border font-mono text-sm"
+                  placeholder={editingAgent.provider ? "Enter model ID" : "Select a provider first"}
+                  disabled={!editingAgent.provider}
+                />
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label className="text-foreground text-sm">Temperature: {editingAgent.temperature.toFixed(1)}</Label>
+              <Slider value={[editingAgent.temperature]} onValueChange={v => setEditingAgent(prev => ({ ...prev, temperature: v[0] }))} min={0} max={1} step={0.1} className="py-2" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-foreground text-sm">System Prompt</Label>
+              <Textarea value={editingAgent.system_prompt} onChange={e => setEditingAgent(prev => ({ ...prev, system_prompt: e.target.value }))} className="bg-secondary border-border min-h-[100px] font-mono text-sm" placeholder="You are a helpful assistant..." />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="pointline" onClick={() => setFormOpen(false)} className="border-border text-foreground">Cancel</Button>
+            <Button onClick={handleSave} className="gradient-primary text-primary-foreground">Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-frontend">Delete agent?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">This action cannot be undone. The agent and its configuration will be permanently deleted.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-border text-foreground">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

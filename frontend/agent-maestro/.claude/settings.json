@@ -1,0 +1,84 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"http://localhost:8000/api/v1/dashboard/recent-runs?limit=10\" -H \"Authorization: Bearer test\")",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(findstr \":5173\")",
+      "Bash(taskkill /F /IM \"node.exe\")",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -v http://localhost:5173/approvals)",
+      "Bash(findstr \":5173\" c:/Users/alvar/ocin_app/frontend/agent-maestro)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/session-start.js\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/pre-read.js\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/pre-write.js\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/post-read.js\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/post-write.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/stop.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
