@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     # Schedule Parsing (LLM model for plain-language to cron conversion)
     SCHEDULE_PARSE_MODEL: str = "gpt-4o-mini"
 
+    # Email (Mailjet)
+    MAILJET_API_KEY: str = ""
+    MAILJET_API_SECRET: str = ""
+    MAILJET_SENDER: str = "noreply@ocin.site"
+    OCIN_PUBLIC_URL: str = "http://localhost:8080"
+
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
 

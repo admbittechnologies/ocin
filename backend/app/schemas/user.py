@@ -15,6 +15,7 @@ class UserOut(BaseModel):
     id: str
     email: str
     plan: str
+    email_verified: bool = False
     created_at: str
 
     class Config:

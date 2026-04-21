@@ -9,6 +9,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 import Dashboard from "./pages/Dashboard";
 import Agents from "./pages/Agents";
 import Tools from "./pages/Tools";
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
           <Route path="/chat" element={<ProtectedPage><Chat /></ProtectedPage>} />
           <Route path="/agents" element={<ProtectedPage><Agents /></ProtectedPage>} />

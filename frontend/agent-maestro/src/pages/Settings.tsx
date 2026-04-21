@@ -45,6 +45,7 @@ export default function SettingsPage() {
   const [tavilyKey, setTavilyKey] = useState("");
   const [tavilyConnected, setTavilyConnected] = useState(false);
   const [deletingTavily, setDeletingTavily] = useState(false);
+  const [deletingProvider, setDeletingProvider] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadApiKeys();

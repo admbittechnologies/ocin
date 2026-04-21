@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ocin
+      POSTGRES_PASSWORD: yFTA2u0oXyfuxWWQ1Is7hYiNXiLOWjsL
+      POSTGRES_DB: ocin
+    volumes:
+      - pgdata_ocin:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ocin"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "8090:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"
+
+  frontend:
+    build:
+      context: ./frontend/agent-maestro
+      dockerfile: Dockerfile
+    ports:
+      - "8091:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata_ocin:
