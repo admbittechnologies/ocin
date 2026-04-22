@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     MAILJET_SENDER: str = "noreply@ocin.site"
     OCIN_PUBLIC_URL: str = "http://localhost:8080"
 
+    # Telegram
+    TELEGRAM_BOT_TOKEN: str = ""
+
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
 

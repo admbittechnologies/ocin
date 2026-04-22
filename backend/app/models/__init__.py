@@ -8,6 +8,7 @@ from app.models.memory_vectors import AgentMemoryVector
 from app.models.thread import Thread
 from app.models.message import Message
 from app.models.approval import Approval
+from app.models.telegram import TelegramUser, TelegramThread
 
 __all__ = [
     "User",
@@ -20,4 +21,6 @@ __all__ = [
     "Thread",
     "Message",
     "Approval",
+    "TelegramUser",
+    "TelegramThread",
 ]

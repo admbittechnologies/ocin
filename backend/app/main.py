@@ -192,10 +192,15 @@ async def lifespan(app: FastAPI):
     await reload_schedules(scheduler)
     logger.info({"event": "startup", "message": "Schedules loaded"})
 
+    # Start Telegram bot (non-blocking, runs in background)
+    from app.services.telegram_service import start_telegram_service, stop_telegram_service
+    await start_telegram_service()
+
     yield
 
     # Shutdown
     logger.info({"event": "shutdown", "message": "Shutting down OCIN API"})
+    await stop_telegram_service()
     scheduler.shutdown()
     await engine.dispose()
 
